@@ -1,0 +1,16 @@
+{
+    "title": "Kártya regisztrációs applikáció",
+    "registration": "Regisztráció",
+    "topUp": "Feltöltés",
+    "pay": "Fizetés",
+    "entries": "Listázás",
+    "export": "Exportálás",
+    
+    "cardId": "Kártyaazonosító",
+    
+    "registrationPageTitle": "Regisztráció",
+    "name": "Név",
+    "registrationPageAction" : "Regisztráció",
+
+    "":""
+}

@@ -1,0 +1,16 @@
+{
+    "title": "Card registration application",
+    "registration": "Registration",
+    "topUp": "Top Up",
+    "pay": "Pay",
+    "entries": "Entries",
+    "export": "Export",
+    
+    "cardId": "Card ID",
+    
+    "registrationPageTitle": "Registration",
+    "name": "Name",
+    "registrationPageAction" : "Registration",
+
+    "":""
+}
