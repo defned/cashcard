@@ -1,0 +1,11 @@
+MSYS2 (http://mingw-w64.org/doku.php/download)
+http://www.msys2.org/
+http://repo.msys2.org/distrib/x86_64/msys2-x86_64-20190524.exe
+
+Install tools
+pacman -Sy
+pacman -Syu --noconfirm autoconf libtool automake make autoconf-archive pkg-config
+pacman -Syu --noconfirm gettext base-devel mingw-w64-x86_64-gcc
+pacman -S make gettext base-devel mingw-w64-x86_64-gcc
+
+RUN MinGW64 Shell!!!
