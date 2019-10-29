@@ -57,28 +57,16 @@ void createIsolate(SendPort isolateToMainStream) {
     print('[mainToIsolateStream] $data');
     if (data[0] == IsolateState.INIT) {
       print("Initialize and open serialport");
-      serialPort = SerialPort(data[1])
-        ..onData = (onData) {
-          isolateToMainStream.send(String.fromCharCodes(onData));
-        }
-        ..open();
+      // serialPort = SerialPort(data[1])
+      //   ..onData = (onData) {
+      //     isolateToMainStream.send(String.fromCharCodes(onData));
+      //   }
+      //   ..open();
     } else if (data[0] == IsolateState.EXIT) {
       print("Closing serialport");
-      serialPort.close();
+      // serialPort.close();
     }
   });
-
-  // SerialPort sp;
-  // try {
-  //   //SerialPort.getAvailablePorts()[0]
-  //   sp = SerialPort(params[1])
-  //     ..onData = (onData) {
-  //       params[0].send(onData);
-  //     }
-  //     ..open();
-  // } finally {
-  //   // sp.close();
-  // }
 }
 
 Isolate _isolate;
@@ -90,14 +78,14 @@ void main() async {
   AppConfig.init();
 
   SendPort mainToIsolateStream = await initIsolate();
-  print("Init");
-  mainToIsolateStream.send([IsolateState.INIT, AppConfig.port]);
-  sleep(Duration(seconds: 10));
-  print("Exit");
-  mainToIsolateStream.send([IsolateState.EXIT]);
-  sleep(Duration(seconds: 1));
-  print("Init");
-  mainToIsolateStream.send([IsolateState.INIT, AppConfig.port]);
+  // print("Init");
+  // mainToIsolateStream.send([IsolateState.INIT, AppConfig.port]);
+  // sleep(Duration(seconds: 10));
+  // print("Exit");
+  // mainToIsolateStream.send([IsolateState.EXIT]);
+  // sleep(Duration(seconds: 1));
+  // print("Init");
+  // mainToIsolateStream.send([IsolateState.INIT, AppConfig.port]);
 
   // final ReceivePort _toIsolate = ReceivePort();
 
@@ -108,7 +96,7 @@ void main() async {
   //   serialPort.sink.add(String.fromCharCodes(data));
   // });
 
-  // runApp(AppComponent());
+  runApp(AppComponent());
 }
 
 // void main() {

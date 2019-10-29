@@ -17,3 +17,12 @@ CREATE TABLE `balance_log` (
 )
 ENGINE=InnoDB
 ;
+
+DELIMITER //
+CREATE TRIGGER insert_balance_log 
+  AFTER UPDATE ON `balance` 
+  FOR EACH ROW 
+BEGIN
+  INSERT (id, eff_sp, amount) VALUES (NEW.id, NOW(), NEW.amount - OLD.amount);
+END; //
+DELIMITER ;

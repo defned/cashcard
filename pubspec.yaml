@@ -19,8 +19,8 @@ dependencies:
   mysql1: 0.17.0+1
   path: ^1.6.4
   ffi_libserialport:
-  #   git: https://github.com/defned/ffi_libserialport.git
-    path: ../ffi_libserialport
+    git: https://github.com/defned/ffi_libserialport.git
+    # path: ../ffi_libserialport
   auto_size_text: any
   fluro: any
   logging: any

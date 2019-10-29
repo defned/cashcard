@@ -9,8 +9,15 @@ class AppConfig {
   AppConfig._();
 
   static init() {
-    _configFile = File(
-        join(File(Platform.resolvedExecutable).parent.path, "config.json"));
+    if (Platform.isWindows) {
+      _configFile = File(
+          join(File(Platform.resolvedExecutable).parent.path, "config.json"));
+    } else if (Platform.isMacOS) {
+      _configFile =
+          File(join(Directory("~").absolute.parent.path, "config.json"));
+    } else
+      throw "Not supported platform";
+
     if (!_configFile.existsSync()) {
       try {
         print("Load configuration from filesystem ...");
