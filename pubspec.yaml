@@ -16,13 +16,12 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  process: any
+  mysql1: 0.17.0+1
+  path: ^1.6.4
   ffi_libserialport:
-    path: ../../ffi_libserialport
   #   git: https://github.com/defned/ffi_libserialport.git
+    path: ../ffi_libserialport
   auto_size_text: any
-  catcher: any
-  flutter_staggered_grid_view: any
   fluro: any
   logging: any
   cupertino_icons: ^0.1.0
@@ -36,6 +35,7 @@ flutter:
 
   assets:
     - blobs/libserialport_c-mac64.so
+    - blobs/libserialport_c-win64.dll
     - lang/hu.json
     - lang/en.json
 

@@ -1,9 +1,8 @@
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:example_flutter/app/app_localizations.dart';
+import 'package:example_flutter/db/datasource.dart';
 import 'package:example_flutter/pages/registration.dart';
 import 'package:example_flutter/util/extensions.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 class OverviewPage extends StatefulWidget {
   /// Constructor
@@ -45,7 +44,7 @@ class _OverviewPageState extends State<OverviewPage>
                     onTap: jumpTo(RegistrationPage())),
                 createButton(tr('topUp'), onTap: jumpTo(RegistrationPage())),
                 createButton(tr('pay'), onTap: jumpTo(RegistrationPage())),
-                createButton(tr('entries'), onTap: jumpTo(RegistrationPage())),
+                createButton(tr('entries'), onTap: jumpTo(DataTableDemo())),
                 createButton(tr('export'), onTap: jumpTo(RegistrationPage())),
               ],
             ),
