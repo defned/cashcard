@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:example_flutter/app/app.dart';
-import 'package:example_flutter/db/db.dart';
 import 'package:example_flutter/main.dart';
 import 'package:example_flutter/widget/subpage.dart';
 import 'package:example_flutter/util/extensions.dart';
@@ -9,21 +8,20 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Regsitration page
-class RegistrationPage extends StatefulWidget {
+class PayPage extends StatefulWidget {
   /// Const constructor
-  const RegistrationPage({Key key}) : super(key: key);
+  const PayPage({Key key}) : super(key: key);
 
   @override
-  _RegistrationPageState createState() => _RegistrationPageState();
+  _PayPageState createState() => _PayPageState();
 }
 
-class _RegistrationPageState extends State<RegistrationPage>
-    with StateWithLocalization<RegistrationPage> {
+class _PayPageState extends State<PayPage> with StateWithLocalization<PayPage> {
   final TextEditingController _cardNumberFieldController =
       TextEditingController();
   final GlobalKey<FormFieldState> _cardNumberFieldKey =
       GlobalKey<FormFieldState>();
-  final GlobalKey<FormFieldState> _cardOwnerFieldKey =
+  final GlobalKey<FormFieldState> _propertyFieldKey =
       GlobalKey<FormFieldState>();
   StreamSubscription<String> _subscription;
 
@@ -46,7 +44,7 @@ class _RegistrationPageState extends State<RegistrationPage>
   Widget build(BuildContext context) {
     return SubPage(
       onPop: () {},
-      title: tr('registrationPageTitle'),
+      title: tr('payPageTitle'),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
         child: Center(
@@ -66,12 +64,12 @@ class _RegistrationPageState extends State<RegistrationPage>
                         controller: _cardNumberFieldController,
                       ),
                       SizedBox(height: 30),
-                      Text(tr('name'), style: TextStyle(fontSize: 40)),
+                      Text(tr('amount'), style: TextStyle(fontSize: 40)),
                       TextFormField(
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             fontSize: 40, fontWeight: FontWeight.bold),
-                        key: _cardOwnerFieldKey,
+                        key: _propertyFieldKey,
                       ),
                     ],
                   ),
@@ -83,15 +81,14 @@ class _RegistrationPageState extends State<RegistrationPage>
                     child: MaterialButton(
                       color: Colors.lightBlue.shade100,
                       onPressed: () async {
-                        await app.db.register(
-                            _cardNumberFieldController.value.text,
-                            _cardOwnerFieldKey.currentState.value.toString());
+                        await app.db.pay(_cardNumberFieldController.value.text,
+                            int.parse(_propertyFieldKey.currentState.value));
                       },
                       child: Center(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
-                            tr('registrationPageAction'),
+                            tr('payPageAction'),
                             style: TextStyle(
                                 fontSize: 40, fontWeight: FontWeight.bold),
                           ),

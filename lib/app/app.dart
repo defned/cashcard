@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:example_flutter/app/app_config.dart';
 import 'package:example_flutter/app/app_localizations.dart';
 import 'package:example_flutter/app/routes.dart';
 import 'package:example_flutter/app/style.dart';
+import 'package:example_flutter/db/db.dart';
 import 'package:example_flutter/util/snackbarmessage.dart';
 import 'package:example_flutter/widget/capsulebutton.dart';
 import 'package:fluro/fluro.dart';
@@ -18,12 +20,32 @@ class Application extends WidgetsBindingObserver {
       StreamController<SnackBarMessage>();
   Stream<SnackBarMessage> syncMessages;
   final Router router = Router();
+  Db db;
+
   Application() {
     syncMessages = messageController.stream;
+
+    AppConfig.init();
+
+    db = Db(
+      host: AppConfig.dbHost,
+      port: AppConfig.dbPort,
+      dbName: AppConfig.dbName,
+      userName: AppConfig.dbUserName,
+      password: AppConfig.dbPassword,
+    );
+  }
+
+  void init() {
+    db.connect();
+  }
+
+  void dipose() {
+    db.close();
   }
 }
 
-final Application app = Application();
+Application app;
 
 class AppComponent extends StatefulWidget {
   @override
@@ -44,6 +66,7 @@ class AppComponentState extends State<AppComponent> {
   @override
   initState() {
     super.initState();
+    app.init();
     _messageSubscription = app.syncMessages.listen((message) {
       if (message is SnackBarMessage) {
         _messageScaffoldKey.currentState.showSnackBar(SnackBar(
@@ -87,6 +110,7 @@ class AppComponentState extends State<AppComponent> {
   dispose() {
     _sub.cancel();
     _messageSubscription.cancel();
+    app.dipose();
     super.dispose();
   }
 

@@ -1,6 +1,8 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:example_flutter/db/datasource.dart';
+import 'package:example_flutter/pages/pay.dart';
 import 'package:example_flutter/pages/registration.dart';
+import 'package:example_flutter/pages/topup.dart';
 import 'package:example_flutter/util/extensions.dart';
 import 'package:flutter/material.dart';
 
@@ -42,10 +44,10 @@ class _OverviewPageState extends State<OverviewPage>
               children: <Widget>[
                 createButton(tr('registration'),
                     onTap: jumpTo(RegistrationPage())),
-                createButton(tr('topUp'), onTap: jumpTo(RegistrationPage())),
-                createButton(tr('pay'), onTap: jumpTo(RegistrationPage())),
+                createButton(tr('topUp'), onTap: jumpTo(TopUpPage())),
+                createButton(tr('pay'), onTap: jumpTo(PayPage())),
                 createButton(tr('entries'), onTap: jumpTo(DataTableDemo())),
-                createButton(tr('export'), onTap: jumpTo(RegistrationPage())),
+                // createButton(tr('delete'), onTap: jumpTo(DeletePage())),
               ],
             ),
           ),

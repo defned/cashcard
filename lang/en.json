@@ -5,12 +5,19 @@
     "pay": "Pay",
     "entries": "Entries",
     "export": "Export",
-    
+    "delete": "Delete",
     "cardId": "Card ID",
-    
+    " - Registration - ": "-----------------------------",
     "registrationPageTitle": "Registration",
     "name": "Name",
-    "registrationPageAction" : "Registration",
-
-    "":""
+    "registrationPageAction": "Registration",
+    " - TopUp - ": "-----------------------------",
+    "topupPageTitle": "Top Up",
+    "amount": "Amount",
+    "topupPageAction": "Top Up",
+    " - Pay - ": "-----------------------------",
+    "payPageTitle": "Pay",
+    "amount": "Amount",
+    "payPageAction": "Pay",
+    "": ""
 }

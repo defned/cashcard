@@ -20,9 +20,11 @@ class AppConfig {
 
     if (!_configFile.existsSync()) {
       try {
-        print("Load configuration from filesystem ...");
+        print("Configuration is not found");
+        print("Create configuration on filesystem at '${_configFile.path}'");
         _configFile.writeAsStringSync(jsonEncode({
           "db": {
+            "host": "localhost",
             "userName": "root",
             "password": "admin",
             "dbName": "cashcard",
@@ -37,6 +39,7 @@ class AppConfig {
       }
     }
 
+    print("Load configuration from filesystem from '${_configFile.path}'");
     _config = jsonDecode(_configFile.readAsStringSync());
   }
 
@@ -52,7 +55,10 @@ class AppConfig {
   }
 
   static get dbName => _config["db"]["dbName"];
-  static set dbName(String dbName) => _config["db"]["dbName"] = dbName;
+  static set dbName(String name) => _config["db"]["dbName"] = name;
+
+  static get dbHost => _config["db"]["host"];
+  static set dbHost(String host) => _config["db"]["host"] = host;
 
   static get dbPort => _config["db"]["port"];
   static set dbPort(int port) => _config["db"]["port"] = port;

@@ -57,7 +57,7 @@ void createIsolate(SendPort isolateToMainStream) {
     print('[mainToIsolateStream] $data');
     if (data[0] == IsolateState.INIT) {
       print("Initialize and open serialport");
-      // serialPort = SerialPort(data[1])
+      //  serialPort = SerialPort(data[1])
       //   ..onData = (onData) {
       //     isolateToMainStream.send(String.fromCharCodes(onData));
       //   }
@@ -75,7 +75,7 @@ void main() async {
   // See https://github.com/flutter/flutter/wiki/Desktop-shells#target-platform-override
   debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
 
-  AppConfig.init();
+  app = Application();
 
   SendPort mainToIsolateStream = await initIsolate();
   // print("Init");

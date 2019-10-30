@@ -9,21 +9,21 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Regsitration page
-class RegistrationPage extends StatefulWidget {
+class TopUpPage extends StatefulWidget {
   /// Const constructor
-  const RegistrationPage({Key key}) : super(key: key);
+  const TopUpPage({Key key}) : super(key: key);
 
   @override
-  _RegistrationPageState createState() => _RegistrationPageState();
+  _TopUpPageState createState() => _TopUpPageState();
 }
 
-class _RegistrationPageState extends State<RegistrationPage>
-    with StateWithLocalization<RegistrationPage> {
+class _TopUpPageState extends State<TopUpPage>
+    with StateWithLocalization<TopUpPage> {
   final TextEditingController _cardNumberFieldController =
       TextEditingController();
   final GlobalKey<FormFieldState> _cardNumberFieldKey =
       GlobalKey<FormFieldState>();
-  final GlobalKey<FormFieldState> _cardOwnerFieldKey =
+  final GlobalKey<FormFieldState> _propertyFieldKey =
       GlobalKey<FormFieldState>();
   StreamSubscription<String> _subscription;
 
@@ -46,7 +46,7 @@ class _RegistrationPageState extends State<RegistrationPage>
   Widget build(BuildContext context) {
     return SubPage(
       onPop: () {},
-      title: tr('registrationPageTitle'),
+      title: tr('topupPageTitle'),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
         child: Center(
@@ -66,12 +66,12 @@ class _RegistrationPageState extends State<RegistrationPage>
                         controller: _cardNumberFieldController,
                       ),
                       SizedBox(height: 30),
-                      Text(tr('name'), style: TextStyle(fontSize: 40)),
+                      Text(tr('amount'), style: TextStyle(fontSize: 40)),
                       TextFormField(
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             fontSize: 40, fontWeight: FontWeight.bold),
-                        key: _cardOwnerFieldKey,
+                        key: _propertyFieldKey,
                       ),
                     ],
                   ),
@@ -83,15 +83,15 @@ class _RegistrationPageState extends State<RegistrationPage>
                     child: MaterialButton(
                       color: Colors.lightBlue.shade100,
                       onPressed: () async {
-                        await app.db.register(
+                        await app.db.topUp(
                             _cardNumberFieldController.value.text,
-                            _cardOwnerFieldKey.currentState.value.toString());
+                            int.parse(_propertyFieldKey.currentState.value));
                       },
                       child: Center(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
-                            tr('registrationPageAction'),
+                            tr('topupPageAction'),
                             style: TextStyle(
                                 fontSize: 40, fontWeight: FontWeight.bold),
                           ),

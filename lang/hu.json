@@ -5,12 +5,15 @@
     "pay": "Fizetés",
     "entries": "Listázás",
     "export": "Exportálás",
-    
+    "delete": "Törlés",
+    " - Registration - ": "-----------------------------",
     "cardId": "Kártyaazonosító",
-    
     "registrationPageTitle": "Regisztráció",
     "name": "Név",
-    "registrationPageAction" : "Regisztráció",
-
-    "":""
+    "registrationPageAction": "Regisztráció",
+    " - TopUp - ": "-----------------------------",
+    "topupPageTitle": "Feltöltés",
+    "amount": "Összeg",
+    "topupPageAction": "Feltöltés",
+    "": ""
 }
