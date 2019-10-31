@@ -1,4 +1,3 @@
-import 'package:example_flutter/app/app_localizations.dart';
 import 'package:example_flutter/pages/overview.dart';
 import 'package:example_flutter/pages/registration.dart';
 import 'package:example_flutter/util/logging.dart';

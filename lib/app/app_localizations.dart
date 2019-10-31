@@ -3,21 +3,21 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class AppLocalizations {
+class AppLocalization {
   final Locale locale;
 
-  AppLocalizations(this.locale);
+  AppLocalization(this.locale);
 
-  static AppLocalizations of(BuildContext context) {
-    return Localizations.of<AppLocalizations>(context, AppLocalizations);
+  static AppLocalization of(BuildContext context) {
+    return Localizations.of<AppLocalization>(context, AppLocalization);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate =
+  static const LocalizationsDelegate<AppLocalization> delegate =
       _AppLocalzationsDelegate();
 
-  Map<String, String> _localizedStrings;
+  static Map<String, String> _localizedStrings;
 
-  Future<bool> load() async {
+  static Future<AppLocalization> load(Locale locale) async {
     String jsonString =
         await rootBundle.loadString('lang/${locale.languageCode}.json');
 
@@ -27,7 +27,7 @@ class AppLocalizations {
       return MapEntry(key, value.toString());
     });
 
-    return true;
+    return AppLocalization(locale);
   }
 
   String translate(String key) {
@@ -35,24 +35,19 @@ class AppLocalizations {
   }
 }
 
-class _AppLocalzationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalzationsDelegate extends LocalizationsDelegate<AppLocalization> {
   const _AppLocalzationsDelegate();
 
   @override
   bool isSupported(Locale locale) {
-    // TODO: implement isSupported
     return ['en', 'hu'].contains(locale.languageCode);
   }
 
   @override
-  Future<AppLocalizations> load(Locale locale) async {
-    AppLocalizations localizations = new AppLocalizations(locale);
-    await localizations.load();
-    return localizations;
-  }
+  Future<AppLocalization> load(Locale locale) => AppLocalization.load(locale);
 
   @override
-  bool shouldReload(LocalizationsDelegate<AppLocalizations> old) {
+  bool shouldReload(LocalizationsDelegate<AppLocalization> old) {
     // we do not need it yet due to the fact that we are replacing only strings
     // no other UI element
     return false;

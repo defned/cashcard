@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 
 import 'package:example_flutter/app/app_config.dart';
 import 'package:example_flutter/app/app_localizations.dart';
@@ -13,7 +11,6 @@ import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart';
 
 class Application extends WidgetsBindingObserver {
   StreamController<SnackBarMessage> messageController =
@@ -125,7 +122,7 @@ class AppComponentState extends State<AppComponent> {
       },
       navigatorObservers: [AppNavigatorObserver()],
       onGenerateTitle: (BuildContext context) =>
-          AppLocalizations.of(context).translate('title'),
+          AppLocalization.of(context).translate('title'),
       localeListResolutionCallback: (locales, supportedLocales) {
         locales.forEach((l) => print(l.languageCode));
         for (var locale in locales) {
@@ -139,11 +136,13 @@ class AppComponentState extends State<AppComponent> {
         return supportedLocales.first;
       },
       localizationsDelegates: [
-        AppLocalizations.delegate,
+        AppLocalization.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      locale: Locale(AppConfig.language.toString().toLowerCase(),
+          AppConfig.language.toString().toUpperCase()),
       supportedLocales: [
         //second param is country code
         Locale('en', 'US'),

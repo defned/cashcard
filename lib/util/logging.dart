@@ -119,7 +119,7 @@ void _logToConsole(LogRecord rec) {
     String messageString = messageToPrint.toString();
     for (String part in messageString.split("\n")) {
       _debugPrintMultiline(
-          "${rec.time}: ${rec.level.name}: ${rec.loggerName}: ${part}");
+          "${rec.time}: ${rec.level.name}: ${rec.loggerName}: $part");
     }
   }, zoneSpecification: ZoneSpecification(print: printHandler));
 }

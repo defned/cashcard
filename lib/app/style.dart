@@ -122,7 +122,7 @@ ThemeData basicTheme = ThemeData(
       focusedBorder:
           UnderlineInputBorder(borderSide: BorderSide(color: AppColors.accent)),
     ),
-    canvasColor: Colors.transparent,
+    //canvasColor: Colors.transparent,
     iconTheme: IconThemeData(size: 16.0, color: AppColors.enabledColor),
     dividerColor: AppColors.borderShadow,
     bottomAppBarTheme: BottomAppBarTheme(elevation: 0.5, color: Colors.white),

@@ -1,19 +1,4 @@
-// Copyright 2018 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 import 'dart:async';
-import 'dart:io';
 import 'dart:isolate';
 
 import 'package:example_flutter/app/app.dart';
@@ -42,7 +27,7 @@ Future<SendPort> initIsolate() async {
     }
   });
 
-  Isolate myIsolateInstance =
+  serialPortIsolate =
       await Isolate.spawn(createIsolate, isolateToMainStream.sendPort);
   return completer.future;
 }
@@ -57,19 +42,20 @@ void createIsolate(SendPort isolateToMainStream) {
     print('[mainToIsolateStream] $data');
     if (data[0] == IsolateState.INIT) {
       print("Initialize and open serialport");
-      //  serialPort = SerialPort(data[1])
-      //   ..onData = (onData) {
-      //     isolateToMainStream.send(String.fromCharCodes(onData));
-      //   }
-      //   ..open();
+      serialPort = SerialPort(data[1])
+        ..onData = (onData) {
+          isolateToMainStream.send(String.fromCharCodes(onData));
+        }
+        ..open();
     } else if (data[0] == IsolateState.EXIT) {
       print("Closing serialport");
-      // serialPort.close();
+      serialPort.close();
     }
   });
 }
 
-Isolate _isolate;
+Isolate serialPortIsolate;
+SendPort serialPortMainToIsolateStream;
 
 void main() async {
   // See https://github.com/flutter/flutter/wiki/Desktop-shells#target-platform-override
@@ -77,24 +63,8 @@ void main() async {
 
   app = Application();
 
-  SendPort mainToIsolateStream = await initIsolate();
-  // print("Init");
-  // mainToIsolateStream.send([IsolateState.INIT, AppConfig.port]);
-  // sleep(Duration(seconds: 10));
-  // print("Exit");
-  // mainToIsolateStream.send([IsolateState.EXIT]);
-  // sleep(Duration(seconds: 1));
-  // print("Init");
-  // mainToIsolateStream.send([IsolateState.INIT, AppConfig.port]);
-
-  // final ReceivePort _toIsolate = ReceivePort();
-
-  // _isolate =
-  //     await Isolate.spawn(createIsolate, _toIsolate.sendPort);
-  // _toIsolate.listen((data) {
-  //   print(data);
-  //   serialPort.sink.add(String.fromCharCodes(data));
-  // });
+  serialPortMainToIsolateStream = await initIsolate();
+  serialPortMainToIsolateStream.send([IsolateState.INIT, AppConfig.port]);
 
   runApp(AppComponent());
 }

@@ -16,6 +16,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
+  flutter_icons: 0.3.1
   mysql1: 0.17.0+1
   path: ^1.6.4
   ffi_libserialport:
@@ -27,8 +28,8 @@ dependencies:
   cupertino_icons: ^0.1.0
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
+  # flutter_test:
+  #   sdk: flutter
 
 flutter:
   uses-material-design: true

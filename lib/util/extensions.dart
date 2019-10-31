@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 mixin StateWithLocalization<T extends StatefulWidget> on State<T> {
   String tr(String id) {
-    return AppLocalizations.of(context).translate(id);
+    return AppLocalization.of(context).translate(id);
   }
 
   jumpTo(Widget widget) {
