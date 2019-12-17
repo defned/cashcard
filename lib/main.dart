@@ -42,7 +42,14 @@ void createIsolate(SendPort isolateToMainStream) {
     print('[mainToIsolateStream] $data');
     if (data[0] == IsolateState.INIT) {
       print("Initialize and open serialport");
-      serialPort = SerialPort(data[1])
+      serialPort = SerialPort(
+        data[1],
+        baudrate: data[2],
+        databits: data[3],
+        parity: data[4],
+        stopbits: data[5],
+        delay: data[6],
+      )
         ..onData = (onData) {
           isolateToMainStream.send(String.fromCharCodes(onData));
         }
@@ -64,7 +71,15 @@ void main() async {
   app = Application();
 
   serialPortMainToIsolateStream = await initIsolate();
-  serialPortMainToIsolateStream.send([IsolateState.INIT, AppConfig.port]);
+  serialPortMainToIsolateStream.send([
+    IsolateState.INIT,
+    AppConfig.comPort,
+    AppConfig.comBaudrate,
+    AppConfig.comDatabits,
+    AppConfig.comParity,
+    AppConfig.comStopbits,
+    AppConfig.comDelay,
+  ]);
 
   runApp(AppComponent());
 }

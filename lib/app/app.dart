@@ -149,7 +149,7 @@ class AppComponentState extends State<AppComponent> {
         Locale('hu', 'HU'),
       ],
       debugShowCheckedModeBanner: false,
-      theme: basicTheme,
+      theme: blackTheme(),
       onGenerateRoute: app.router.generator,
       initialRoute: Routes.overviewPage,
     );

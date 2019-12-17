@@ -30,7 +30,14 @@ class AppConfig {
             "dbName": "cashcard",
             "port": 3306,
           },
-          "port": "COM4",
+          "com": {
+            "port": "COM4",
+            "baudrate": 9600,
+            "stopbits": 0,
+            "databits": 8,
+            "parity": 0,
+            "delay": 100,
+          },
           "language": "en"
         }));
       } catch (e) {
@@ -71,8 +78,23 @@ class AppConfig {
   static set dbPassword(String password) =>
       _config["db"]["password"] = password;
 
-  static get port => _config["port"];
-  static set port(String port) => _config["port"] = port;
+  static get comPort => _config["com"]["port"];
+  static set comPort(String port) => _config["com"]["port"] = port;
+
+  static get comBaudrate => _config["com"]["baudrate"];
+  static set comBaudrate(int baudrate) => _config["com"]["baudrate"] = baudrate;
+
+  static get comStopbits => _config["com"]["stopbits"];
+  static set comStopbits(int stopbits) => _config["com"]["stopbits"] = stopbits;
+
+  static get comDatabits => _config["com"]["databits"];
+  static set comDatabits(int databits) => _config["com"]["databits"] = databits;
+
+  static get comParity => _config["com"]["parity"];
+  static set comParity(int parity) => _config["com"]["parity"] = parity;
+
+  static get comDelay => _config["com"]["delay"];
+  static set comDelay(int delay) => _config["com"]["delay"] = delay;
 
   static get language => _config["language"];
   static set language(String language) => _config["language"] = language;

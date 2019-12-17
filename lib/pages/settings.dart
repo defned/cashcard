@@ -15,13 +15,96 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage>
     with StateWithLocalization<SettingsPage> {
-  final _formKey = GlobalKey<FormState>();
+  final List<int> parities = [
+    SpParity.INVALID,
+    SpParity.NONE,
+    SpParity.ODD,
+    SpParity.EVEN,
+    SpParity.MARK,
+    SpParity.SPACE,
+  ];
+  final List<int> databits = [
+    5,
+    6,
+    7,
+    8,
+    9,
+  ];
+  final List<int> stopbits = [
+    0,
+    1,
+    2,
+  ];
+  final List<int> baudrates = [
+    300,
+    600,
+    1200,
+    2400,
+    4800,
+    9600,
+    19200,
+    38400,
+    57600,
+    115200,
+  ];
+  final List<int> delays = [
+    0,
+    10,
+    50,
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800,
+    900,
+    1000,
+  ];
+
+  final _formDbKey = GlobalKey<FormState>();
+  final _formCommKey = GlobalKey<FormState>();
+
+  final _commPortFieldKey = GlobalKey<FormFieldState>();
+  final _commBaudrateFieldKey = GlobalKey<FormFieldState>();
+  final _commDatabitsFieldKey = GlobalKey<FormFieldState>();
+  final _commParityFieldKey = GlobalKey<FormFieldState>();
+  final _commStopbitsFieldKey = GlobalKey<FormFieldState>();
+  final _commDelayFieldKey = GlobalKey<FormFieldState>();
 
   final _usernameFieldKey = GlobalKey<FormFieldState>();
   final _passwordFieldKey = GlobalKey<FormFieldState>();
   final _hostFieldKey = GlobalKey<FormFieldState>();
   final _portFieldKey = GlobalKey<FormFieldState>();
   final _databaseNameFieldKey = GlobalKey<FormFieldState>();
+
+  List<String> availablePorts = [];
+
+  int comBaudrate;
+  int comStopbits;
+  int comDatabits;
+  int comParity;
+  int comDelay;
+  String comPort;
+
+  @override
+  void initState() {
+    super.initState();
+
+    comBaudrate = AppConfig.comBaudrate;
+    comStopbits = AppConfig.comStopbits;
+    comParity = AppConfig.comParity;
+    comDatabits = AppConfig.comDatabits;
+    comDelay = AppConfig.comDelay;
+    comPort = AppConfig.comPort;
+
+    try {
+      availablePorts = SerialPort.getAvailablePorts();
+    } on Exception catch (e) {
+      print(e);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,59 +156,230 @@ class _SettingsPageState extends State<SettingsPage>
                 ),
               ],
             ),
-            if (SerialPort.getAvailablePorts().isNotEmpty)
-              buildGeneralCard(
+            buildGeneralCard(
                 tr("communication"),
                 [
-                  buildGeneralRow(
-                    tr('serialPort'),
-                    DropdownButtonFormField(
-                      items: SerialPort.getAvailablePorts()
-                          .map((f) => DropdownMenuItem(
-                              value: f,
-                              child: Text(
-                                f,
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.w900),
-                              )))
-                          .toList(),
-                      value: SerialPort.getAvailablePorts()
-                              .contains(AppConfig.port)
-                          ? AppConfig.port
-                          : null,
-                      onChanged: (port) {
-                        setState(() {
-                          AppConfig.port = port;
-                          serialPortMainToIsolateStream
-                              .send([IsolateState.EXIT]);
-                          serialPortMainToIsolateStream
-                              .send([IsolateState.INIT, AppConfig.port]);
-                          AppConfig.store();
-                          Scaffold.of(context).showSnackBar(SnackBar(
-                              backgroundColor: Colors.green.shade600,
-                              content: Text(
-                                  "${tr('serialPort').toLowerCase()[0].toUpperCase()} ${tr('refresh').toLowerCase()} ${tr('succeeded')}")));
-                        });
-                      },
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 21.0, bottom: 8.0),
+                      child: Text(tr('serialPortNotFound'),
+                          style: TextStyle(
+                              color: Colors.red.shade600,
+                              fontWeight: FontWeight.w900)),
                     ),
                   ),
+                  if (!availablePorts.isNotEmpty)
+                    Form(
+                      key: _formCommKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          buildGeneralRow(
+                            tr('serialPort'),
+                            DropdownButtonFormField(
+                              key: _commPortFieldKey,
+                              items: availablePorts
+                                  .map((f) => DropdownMenuItem(
+                                      value: f,
+                                      child: Text(
+                                        f,
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w900),
+                                      )))
+                                  .toList(),
+                              value: availablePorts.contains(comPort)
+                                  ? comPort
+                                  : null,
+                              onChanged: (v) {
+                                setState(() {
+                                  comPort = v;
+                                });
+                              },
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          buildGeneralRow(
+                            tr('baudrate'),
+                            DropdownButtonFormField(
+                              key: _commBaudrateFieldKey,
+                              items: baudrates
+                                  .map((f) => DropdownMenuItem(
+                                      value: f,
+                                      child: Text(
+                                        "$f bit/s",
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w900),
+                                      )))
+                                  .toList(),
+                              value: baudrates.contains(comBaudrate)
+                                  ? comBaudrate
+                                  : null,
+                              onChanged: (v) {
+                                setState(() {
+                                  comBaudrate = v;
+                                });
+                              },
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          buildGeneralRow(
+                            tr('parity'),
+                            DropdownButtonFormField(
+                              key: _commParityFieldKey,
+                              items: parities
+                                  .map((f) => DropdownMenuItem(
+                                      value: f,
+                                      child: Text(
+                                        f.toString(),
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w900),
+                                      )))
+                                  .toList(),
+                              value: parities.contains(comParity)
+                                  ? comParity
+                                  : null,
+                              onChanged: (v) {
+                                setState(() {
+                                  comParity = v;
+                                });
+                              },
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          buildGeneralRow(
+                            tr('databits'),
+                            DropdownButtonFormField(
+                              key: _commDatabitsFieldKey,
+                              items: databits
+                                  .map((f) => DropdownMenuItem(
+                                      value: f,
+                                      child: Text(
+                                        f.toString(),
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w900),
+                                      )))
+                                  .toList(),
+                              value: databits.contains(comDatabits)
+                                  ? comDatabits
+                                  : null,
+                              onChanged: (v) {
+                                setState(() {
+                                  comDatabits = v;
+                                });
+                              },
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          buildGeneralRow(
+                            tr('stopbits'),
+                            DropdownButtonFormField(
+                              key: _commStopbitsFieldKey,
+                              items: stopbits
+                                  .map((f) => DropdownMenuItem(
+                                      value: f,
+                                      child: Text(
+                                        f.toString(),
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w900),
+                                      )))
+                                  .toList(),
+                              value: stopbits.contains(comStopbits)
+                                  ? comStopbits
+                                  : null,
+                              onChanged: (v) {
+                                setState(() {
+                                  comStopbits = v;
+                                });
+                              },
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          buildGeneralRow(
+                            tr('delay'),
+                            DropdownButtonFormField(
+                              key: _commDelayFieldKey,
+                              items: delays
+                                  .map((f) => DropdownMenuItem(
+                                      value: f,
+                                      child: Text(
+                                        "$f ms",
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w900),
+                                      )))
+                                  .toList(),
+                              value:
+                                  delays.contains(comDelay) ? comDelay : null,
+                              onChanged: (v) {
+                                setState(() {
+                                  comDelay = v;
+                                });
+                              },
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
-              ),
-            if (SerialPort.getAvailablePorts().isEmpty)
-              buildGeneralCard(tr("communication"), [
-                Text(tr('serialPortNotFound'),
-                    style: TextStyle(
-                        color: Colors.red.shade600,
-                        fontWeight: FontWeight.w900))
-              ]),
+                availablePorts.isNotEmpty
+                    ? MaterialButton(
+                        child: Row(
+                          children: <Widget>[
+                            Icon(Icons.refresh, size: 20),
+                            SizedBox(width: 10),
+                            Text(tr('refresh'),
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold))
+                          ],
+                        ),
+                        onPressed: () async {
+                          if (_formCommKey.currentState.validate()) {
+                            AppConfig.comPort = comPort;
+                            AppConfig.comBaudrate = comBaudrate;
+                            AppConfig.comDelay = comDelay;
+                            AppConfig.comParity = comParity;
+                            AppConfig.comStopbits = comStopbits;
+                            AppConfig.comDatabits = comDatabits;
+
+                            serialPortMainToIsolateStream
+                                .send([IsolateState.EXIT]);
+                            serialPortMainToIsolateStream.send([
+                              IsolateState.INIT,
+                              AppConfig.comPort,
+                              AppConfig.comBaudrate,
+                              AppConfig.comDatabits,
+                              AppConfig.comParity,
+                              AppConfig.comStopbits,
+                              AppConfig.comDelay,
+                            ]);
+                            AppConfig.store();
+                            print("Serialport connection refresh succeeded");
+                            Scaffold.of(context).showSnackBar(SnackBar(
+                                backgroundColor: Colors.green.shade600,
+                                content: Text(
+                                    "${tr('serialPort').toLowerCase()[0].toUpperCase()}${tr('serialPort').toLowerCase().substring(1)} ${tr('refresh').toLowerCase()} ${tr('succeeded')}")));
+                          }
+                        },
+                      )
+                    : null),
             buildGeneralCard(
               tr('database'),
               [
                 Form(
-                  key: _formKey,
+                  key: _formDbKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -197,7 +451,7 @@ class _SettingsPageState extends State<SettingsPage>
                   ],
                 ),
                 onPressed: () async {
-                  if (_formKey.currentState.validate()) {
+                  if (_formDbKey.currentState.validate()) {
                     // If the form is valid, display a Snackbar.
                     String dbUserName = _usernameFieldKey.currentState.value;
                     String dbPassword = _passwordFieldKey.currentState.value;

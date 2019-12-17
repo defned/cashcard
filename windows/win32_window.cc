@@ -42,7 +42,7 @@ bool Win32Window::CreateAndShow(const std::wstring &title, const Point &origin,
 
   HWND window = CreateWindow(
       window_class.lpszClassName, title.c_str(),
-      WS_OVERLAPPEDWINDOW | WS_VISIBLE, Scale(origin.x, scale_factor),
+      WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_MAXIMIZE, Scale(origin.x, scale_factor),
       Scale(origin.y, scale_factor), Scale(size.width, scale_factor),
       Scale(size.height, scale_factor), nullptr, nullptr,
       window_class.hInstance, this);
@@ -111,8 +111,14 @@ Win32Window::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam,
       return 0;
 
     case WM_GETMINMAXINFO:
-      ((MINMAXINFO*)lparam)->ptMinTrackSize.x = 800;
-      ((MINMAXINFO*)lparam)->ptMinTrackSize.y = 600;
+      RECT WorkArea; SystemParametersInfo( SPI_GETWORKAREA, 0, &WorkArea, 0 );  
+
+      ((MINMAXINFO *)lparam)->ptMaxSize.x = ( WorkArea.right - WorkArea.left );
+      ((MINMAXINFO *)lparam)->ptMaxSize.y = ( WorkArea.bottom - WorkArea.top );
+      ((MINMAXINFO *)lparam)->ptMaxPosition.x = WorkArea.left;
+      ((MINMAXINFO *)lparam)->ptMaxPosition.y = WorkArea.top;
+      ((MINMAXINFO *)lparam)->ptMinTrackSize.x = ( WorkArea.right - WorkArea.left );
+      ((MINMAXINFO *)lparam)->ptMinTrackSize.y = ( WorkArea.right - WorkArea.left );
       return 0;
 
     case WM_ACTIVATE:

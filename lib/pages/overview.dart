@@ -193,13 +193,15 @@ class _OverviewPageState extends State<OverviewPage>
         child: Center(
           child: AspectRatio(
             aspectRatio: 1,
-            child: Column(
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
-                createButton(tr('registration'),
-                    onTap: jumpTo(RegistrationPage())),
+                // createButton(tr('registration'),
+                //     onTap: jumpTo(RegistrationPage())),
                 createButton(tr('topUp'), onTap: jumpTo(TopUpPage())),
                 createButton(tr('pay'), onTap: jumpTo(PayPage())),
-                createButton(tr('entries'), onTap: jumpTo(EntriesPage())),
+                // createButton(tr('entries'), onTap: jumpTo(EntriesPage())),
               ],
             ),
           ),
@@ -211,15 +213,16 @@ class _OverviewPageState extends State<OverviewPage>
   Widget createButton(String s, {Null Function() onTap}) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(20.0),
         child: RawMaterialButton(
-          fillColor: Colors.lightBlue.shade100,
+          // fillColor: Colors.lightBlue.shade100,
           onPressed: onTap,
           child: Container(
-            height: 250,
+            width: double.infinity,
+            height: double.infinity,
             child: Center(
               child: AutoSizeText(s,
-                  style: TextStyle(fontSize: 40), maxLines: 1, group: group),
+                  style: TextStyle(fontSize: 250), maxLines: 1, group: group),
             ),
           ),
         ),

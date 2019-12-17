@@ -10,7 +10,8 @@ class AppColors {
   static const Color darkText = Colors.black;
   static const Color buttonShadow = Color(0xFFE9E9E9);
   static const Color borderShadow = Color(0xFFE0E0E0);
-  static const Color backgroundColor = Color(0xFFF2F2F2);
+  static const Color white_backgroundColor = Color(0xFFF2F2F2);
+  static const Color black_backgroundColor = Color(0xFF000000);
   static const Color enabledColor = Color(0xFF32383d);
   static const Color disabledColor = Color(0xFFD6D6D6);
   static const Color accent = Color(0xFF074DFC);
@@ -35,7 +36,7 @@ String primaryFontFamily = 'Lato';
 String secondaryFontFamily = 'Roboto';
 //////////////////////////////////////////////////////////////////////////
 
-TextTheme _textTheme = TextTheme(
+TextTheme white_textTheme = TextTheme(
   // title: TextStyle(
   //   fontWeight: FontWeight.w700,
   //   color: Colors.yellow,
@@ -60,17 +61,42 @@ TextTheme _textTheme = TextTheme(
       fontWeight: FontWeight.w700, color: AppColors.enabledColor, fontSize: 20),
 );
 
-ThemeData basicTheme = ThemeData(
+TextTheme black_textTheme = TextTheme(
+  // title: TextStyle(
+  //   fontWeight: FontWeight.w700,
+  //   color: Colors.yellow,
+  // ),
+  caption: TextStyle(
+      fontWeight: FontWeight.w700, color: AppColors.brightText, fontSize: 12),
+
+  /// Default text style in the most cases
+  body1: TextStyle(
+      fontWeight: FontWeight.w700, color: AppColors.brightText, fontSize: 14),
+  body2: TextStyle(
+      fontWeight: FontWeight.w700, color: AppColors.accent, fontSize: 14),
+  display1: TextStyle(
+      fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.brightText),
+  display2: TextStyle(
+      fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.brightText),
+  display3: TextStyle(
+      fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.brightText),
+  subtitle: TextStyle(
+      fontWeight: FontWeight.w700, color: AppColors.brightText, fontSize: 11),
+  button: TextStyle(
+      fontWeight: FontWeight.w700, color: AppColors.brightText, fontSize: 20),
+);
+
+ThemeData whiteTheme = ThemeData(
     // Define the default Font Family
     brightness: Brightness.light,
     fontFamily: primaryFontFamily,
-    primaryColor: AppColors.backgroundColor,
+    primaryColor: AppColors.white_backgroundColor,
     accentColor: AppColors.accent,
     disabledColor: AppColors.disabledColor,
-    scaffoldBackgroundColor: AppColors.backgroundColor,
+    scaffoldBackgroundColor: AppColors.white_backgroundColor,
     appBarTheme: AppBarTheme(
         elevation: 0.5,
-        color: AppColors.backgroundColor,
+        color: AppColors.white_backgroundColor,
         iconTheme: IconThemeData(
           size: 16.0,
           color: AppColors.enabledColor,
@@ -80,7 +106,7 @@ ThemeData basicTheme = ThemeData(
                 fontWeight: FontWeight.w700,
                 fontFamily: primaryFontFamily,
                 color: AppColors.enabledColor))),
-    textTheme: _textTheme,
+    textTheme: white_textTheme,
     // primaryTextTheme: _textTheme,
     // accentTextTheme: _textTheme,
 
@@ -124,6 +150,74 @@ ThemeData basicTheme = ThemeData(
     ),
     //canvasColor: Colors.transparent,
     iconTheme: IconThemeData(size: 16.0, color: AppColors.enabledColor),
+    dividerColor: AppColors.borderShadow,
+    bottomAppBarTheme: BottomAppBarTheme(elevation: 0.5, color: Colors.white),
+    bottomAppBarColor: Colors.white);
+
+var blackTheme = () => ThemeData(
+    // Define the default Font Family
+    brightness: Brightness.dark,
+    fontFamily: primaryFontFamily,
+    primaryColor: AppColors.black_backgroundColor,
+    accentColor: AppColors.accent,
+    disabledColor: AppColors.disabledColor,
+    scaffoldBackgroundColor: AppColors.black_backgroundColor,
+    appBarTheme: AppBarTheme(
+        elevation: 0.5,
+        color: AppColors.black_backgroundColor,
+        iconTheme: IconThemeData(
+          size: 16.0,
+          color: AppColors.brightText,
+        ),
+        textTheme: TextTheme(
+            title: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontFamily: primaryFontFamily,
+                color: AppColors.brightText))),
+    textTheme: black_textTheme,
+    // primaryTextTheme: _textTheme,
+    // accentTextTheme: _textTheme,
+
+    dialogTheme: DialogTheme(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    ),
+    buttonTheme: ButtonThemeData(
+      textTheme: ButtonTextTheme.accent,
+      colorScheme: ColorScheme.light(
+        primary: AppColors.brightText,
+        secondary: AppColors.brightText,
+      ),
+    ),
+    tabBarTheme: TabBarTheme(
+        unselectedLabelStyle:
+            TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+        unselectedLabelColor: AppColors.brightText,
+        labelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+        labelColor: AppColors.accent),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+        foregroundColor: AppColors.accent, backgroundColor: AppColors.accent),
+
+    /// Modifies the cursor color in TextFormField
+    colorScheme: ColorScheme.light(primary: AppColors.accent),
+    textSelectionColor: AppColors.accent.withOpacity(0.2),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: false,
+      labelStyle: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: AppColors.brightText,
+          fontSize: 14),
+      hintStyle: TextStyle(color: AppColors.disabledColor),
+      counterStyle: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: AppColors.brightText,
+          fontSize: 12),
+      enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: AppColors.borderShadow)),
+      focusedBorder:
+          UnderlineInputBorder(borderSide: BorderSide(color: AppColors.accent)),
+    ),
+    //canvasColor: Colors.transparent,
+    iconTheme: IconThemeData(size: 16.0, color: AppColors.brightText),
     dividerColor: AppColors.borderShadow,
     bottomAppBarTheme: BottomAppBarTheme(elevation: 0.5, color: Colors.white),
     bottomAppBarColor: Colors.white);
