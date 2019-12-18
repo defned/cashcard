@@ -1,6 +1,7 @@
 import 'package:example_flutter/app/app.dart';
 import 'package:example_flutter/app/app_config.dart';
 import 'package:example_flutter/app/app_localizations.dart';
+import 'package:example_flutter/app/style.dart';
 import 'package:example_flutter/db/db.dart';
 import 'package:example_flutter/main.dart';
 import 'package:example_flutter/util/extensions.dart';
@@ -146,7 +147,7 @@ class _SettingsPageState extends State<SettingsPage>
                         AppConfig.language = lang;
                         AppConfig.store();
                         Scaffold.of(context).showSnackBar(SnackBar(
-                            backgroundColor: Colors.green.shade600,
+                            backgroundColor: AppColors.ok,
                             content: Text(
                                 "${tr('language')} ${tr('refresh').toLowerCase()} ${tr('succeeded')}")));
                       });
@@ -165,7 +166,7 @@ class _SettingsPageState extends State<SettingsPage>
                       padding: const EdgeInsets.only(top: 21.0, bottom: 8.0),
                       child: Text(tr('serialPortNotFound'),
                           style: TextStyle(
-                              color: Colors.red.shade600,
+                              color: AppColors.error,
                               fontWeight: FontWeight.w900)),
                     ),
                   ),
@@ -368,7 +369,7 @@ class _SettingsPageState extends State<SettingsPage>
                             AppConfig.store();
                             print("Serialport connection refresh succeeded");
                             Scaffold.of(context).showSnackBar(SnackBar(
-                                backgroundColor: Colors.green.shade600,
+                                backgroundColor: AppColors.ok,
                                 content: Text(
                                     "${tr('serialPort').toLowerCase()[0].toUpperCase()}${tr('serialPort').toLowerCase().substring(1)} ${tr('refresh').toLowerCase()} ${tr('succeeded')}")));
                           }
@@ -478,13 +479,13 @@ class _SettingsPageState extends State<SettingsPage>
                       AppConfig.store();
                       print("Db connection refresh succeeded");
                       Scaffold.of(context).showSnackBar(SnackBar(
-                          backgroundColor: Colors.green.shade600,
+                          backgroundColor: AppColors.ok,
                           content: Text(
                               "${tr('database')} ${tr('refresh').toLowerCase()} ${tr('succeeded')}")));
                     } catch (e) {
                       print("Db connection refresh failed");
                       Scaffold.of(context).showSnackBar(SnackBar(
-                          backgroundColor: Colors.red.shade600,
+                          backgroundColor: AppColors.error,
                           content: Text(
                               "${tr('database')} ${tr('refresh').toLowerCase()} ${tr('failed')} - ${e.toString()}")));
                       try {

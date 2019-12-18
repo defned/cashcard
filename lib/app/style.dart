@@ -6,7 +6,8 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color brightText = Colors.white;
+  // static const Color brightText = Colors.white;
+  static const Color brightText = Color(0xFFD0D0D0);
   static const Color darkText = Colors.black;
   static const Color buttonShadow = Color(0xFFE9E9E9);
   static const Color borderShadow = Color(0xFFE0E0E0);
@@ -14,10 +15,11 @@ class AppColors {
   static const Color black_backgroundColor = Color(0xFF000000);
   static const Color enabledColor = Color(0xFF32383d);
   static const Color disabledColor = Color(0xFFD6D6D6);
-  static const Color accent = Color(0xFF074DFC);
+  // static const Color accent = Color(0xFF074DFC);
+  static const Color accent = Color(0xFFFFEB3B);
   static const Color accent2 = Color(0xFFFF3762);
-  static const Color ok = accent;
-  static const Color error = Color(0xFFFF001B);
+  static const Color ok = Color(0xFF43A047);
+  static const Color error = Color(0xFFD32F2F);
   static const Color red = Color(0xFFEA4335);
 
   static const Color textColor = Colors.black;
@@ -36,57 +38,85 @@ String primaryFontFamily = 'Lato';
 String secondaryFontFamily = 'Roboto';
 //////////////////////////////////////////////////////////////////////////
 
-TextTheme white_textTheme = TextTheme(
-  // title: TextStyle(
-  //   fontWeight: FontWeight.w700,
-  //   color: Colors.yellow,
-  // ),
-  caption: TextStyle(
-      fontWeight: FontWeight.w700, color: AppColors.enabledColor, fontSize: 12),
+TextTheme white_textTheme() => TextTheme(
+      // title: TextStyle(
+      //   fontWeight: FontWeight.w700,
+      //   color: Colors.yellow,
+      // ),
+      caption: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: AppColors.enabledColor,
+          fontSize: 12),
 
-  /// Default text style in the most cases
-  body1: TextStyle(
-      fontWeight: FontWeight.w700, color: AppColors.enabledColor, fontSize: 14),
-  body2: TextStyle(
-      fontWeight: FontWeight.w700, color: AppColors.accent, fontSize: 14),
-  display1: TextStyle(
-      fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.enabledColor),
-  display2: TextStyle(
-      fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.enabledColor),
-  display3: TextStyle(
-      fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.enabledColor),
-  subtitle: TextStyle(
-      fontWeight: FontWeight.w700, color: AppColors.enabledColor, fontSize: 11),
-  button: TextStyle(
-      fontWeight: FontWeight.w700, color: AppColors.enabledColor, fontSize: 20),
-);
+      /// Default text style in the most cases
+      body1: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: AppColors.enabledColor,
+          fontSize: 14),
+      body2: TextStyle(
+          fontWeight: FontWeight.w700, color: AppColors.accent, fontSize: 14),
+      display1: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: AppColors.enabledColor),
+      display2: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: AppColors.enabledColor),
+      display3: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: AppColors.enabledColor),
+      subtitle: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: AppColors.enabledColor,
+          fontSize: 11),
+      button: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: AppColors.enabledColor,
+          fontSize: 20),
+    );
 
-TextTheme black_textTheme = TextTheme(
-  // title: TextStyle(
-  //   fontWeight: FontWeight.w700,
-  //   color: Colors.yellow,
-  // ),
-  caption: TextStyle(
-      fontWeight: FontWeight.w700, color: AppColors.brightText, fontSize: 12),
+TextTheme black_textTheme() => TextTheme(
+      // title: TextStyle(
+      //   fontWeight: FontWeight.w700,
+      //   color: Colors.yellow,
+      // ),
+      caption: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: AppColors.brightText,
+          fontSize: 12),
 
-  /// Default text style in the most cases
-  body1: TextStyle(
-      fontWeight: FontWeight.w700, color: AppColors.brightText, fontSize: 14),
-  body2: TextStyle(
-      fontWeight: FontWeight.w700, color: AppColors.accent, fontSize: 14),
-  display1: TextStyle(
-      fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.brightText),
-  display2: TextStyle(
-      fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.brightText),
-  display3: TextStyle(
-      fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.brightText),
-  subtitle: TextStyle(
-      fontWeight: FontWeight.w700, color: AppColors.brightText, fontSize: 11),
-  button: TextStyle(
-      fontWeight: FontWeight.w700, color: AppColors.brightText, fontSize: 20),
-);
+      /// Default text style in the most cases
+      body1: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: AppColors.brightText,
+          fontSize: 14),
+      body2: TextStyle(
+          fontWeight: FontWeight.w700, color: AppColors.accent, fontSize: 14),
+      display1: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: AppColors.brightText),
+      display2: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: AppColors.brightText),
+      display3: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: AppColors.brightText),
+      subtitle: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: AppColors.brightText,
+          fontSize: 11),
+      button: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: AppColors.brightText,
+          fontSize: 20),
+    );
 
-ThemeData whiteTheme = ThemeData(
+ThemeData whiteTheme() => ThemeData(
     // Define the default Font Family
     brightness: Brightness.light,
     fontFamily: primaryFontFamily,
@@ -106,7 +136,7 @@ ThemeData whiteTheme = ThemeData(
                 fontWeight: FontWeight.w700,
                 fontFamily: primaryFontFamily,
                 color: AppColors.enabledColor))),
-    textTheme: white_textTheme,
+    textTheme: white_textTheme(),
     // primaryTextTheme: _textTheme,
     // accentTextTheme: _textTheme,
 
@@ -154,12 +184,13 @@ ThemeData whiteTheme = ThemeData(
     bottomAppBarTheme: BottomAppBarTheme(elevation: 0.5, color: Colors.white),
     bottomAppBarColor: Colors.white);
 
-var blackTheme = () => ThemeData(
+ThemeData blackTheme() => ThemeData(
     // Define the default Font Family
     brightness: Brightness.dark,
     fontFamily: primaryFontFamily,
     primaryColor: AppColors.black_backgroundColor,
-    accentColor: AppColors.accent,
+    accentColor: AppColors.brightText,
+    // accentColor: AppColors.accent,
     disabledColor: AppColors.disabledColor,
     scaffoldBackgroundColor: AppColors.black_backgroundColor,
     appBarTheme: AppBarTheme(
@@ -174,7 +205,7 @@ var blackTheme = () => ThemeData(
                 fontWeight: FontWeight.w700,
                 fontFamily: primaryFontFamily,
                 color: AppColors.brightText))),
-    textTheme: black_textTheme,
+    textTheme: black_textTheme(),
     // primaryTextTheme: _textTheme,
     // accentTextTheme: _textTheme,
 

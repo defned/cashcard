@@ -19,8 +19,12 @@ dependencies:
   flutter_icons: 0.3.1
   mysql1: 0.17.0+1
   path: ^1.6.4
+  flushbar: 1.9.1
+  virtual_keyboard: 0.1.4
   ffi_libserialport:
-    git: https://github.com/defned/ffi_libserialport.git
+    git:
+      url: https://github.com/defned/ffi_libserialport.git
+      ref: f2eb77d06f31e0b51e43dfc001191d10e21c0c87
     # path: ../ffi_libserialport
   auto_size_text: any
   fluro: any
