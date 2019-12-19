@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:example_flutter/db/db.dart';
 import 'package:path/path.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:example_flutter/app/app.dart';
 import 'package:example_flutter/app/style.dart';
-import 'package:example_flutter/db/db.dart';
 import 'package:example_flutter/main.dart';
 import 'package:example_flutter/util/extensions.dart';
 import 'package:example_flutter/widget/filedialog.dart';
@@ -13,7 +13,6 @@ import 'package:example_flutter/widget/progressdialog.dart';
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_icons/flutter_icons.dart';
 import 'package:virtual_keyboard/virtual_keyboard.dart';
 
 class OverviewPage extends StatefulWidget {
@@ -55,13 +54,7 @@ class _OverviewPageState extends State<OverviewPage>
   void initState() {
     super.initState();
     _subscription = serialPort.stream.listen((onData) {
-      app.db.get(onData).then((record) {
-        resetFields();
-        _cardIdFieldController.text = onData;
-        _balanceFieldController.text = "${record.balance} Ft";
-      }, onError: (e) {
-        showError(e.toString());
-      });
+      loadDetails(onData);
     });
   }
 
@@ -73,11 +66,12 @@ class _OverviewPageState extends State<OverviewPage>
 
   pay() async {
     try {
-      await app.db.topUp(_cardIdFieldController.text,
+      await app.db.pay(_cardIdFieldController.text,
           int.parse(_propertyFieldController.text));
+      showInfo("${tr('pay')} ${tr('succeeded')}");
       resetFields();
     } catch (e) {
-      showError(e.toString());
+      showError(tr("${e.toString()}"));
     }
   }
 
@@ -85,9 +79,34 @@ class _OverviewPageState extends State<OverviewPage>
     try {
       await app.db.topUp(_cardIdFieldController.text,
           int.parse(_propertyFieldController.text));
+      showInfo("${tr('topUp')} ${tr('succeeded')}");
       resetFields();
     } catch (e) {
-      showError(e.toString());
+      showError(tr("${e.toString()}"));
+    }
+  }
+
+  loadDetails(String data) async {
+    try {
+      DbRecord record = await app.db.get(data);
+      resetFields();
+      _cardIdFieldController.text = data;
+      _balanceFieldController.text = "${record.balance} Ft";
+    } catch (e) {
+      try {
+        if (e == DbExceptions.noRows) {
+          await app.db.register(data);
+          showInfo("${tr('registrationPageTitle')} ${tr('succeeded')}");
+          resetFields();
+        }
+
+        DbRecord record = await app.db.get(data);
+
+        _cardIdFieldController.text = data;
+        _balanceFieldController.text = "${record.balance} Ft";
+      } catch (e) {
+        showError(tr("${e.toString()}"));
+      }
     }
   }
 
@@ -100,37 +119,22 @@ class _OverviewPageState extends State<OverviewPage>
     });
   }
 
-  validate() async {
-    if (isBusy) return;
-    try {
-      isBusy = true;
-      await app.db.pay(_cardIdFieldController.value.text,
-          int.parse(_propertyFieldKey.currentState.value));
-      _cardIdFieldController.clear();
-      _propertyFieldController.clear();
-      cardIdFocus.requestFocus();
-
-      Flushbar(
-          flushbarStyle: FlushbarStyle.FLOATING,
-          flushbarPosition: FlushbarPosition.TOP,
-          margin: EdgeInsets.only(
-              left: MediaQuery.of(this.context).size.width - 400 - 30, top: 15),
-          borderRadius: 8,
-          maxWidth: 400,
-          duration: Duration(milliseconds: 1500),
-          backgroundColor: AppColors.ok,
-          messageText: Text(
-            "${tr('payPageTitle')} ${tr('succeeded')}",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 28, color: Colors.white),
-          ))
-        ..show(this.context);
-    } catch (e) {
-      String trErr = tr(e.toString());
-      if (trErr == null) trErr = e.toString();
-      showError("${tr('payPageTitle')} ${tr('failed')}");
-    }
-    isBusy = false;
+  showInfo(String info) {
+    Flushbar(
+        flushbarStyle: FlushbarStyle.FLOATING,
+        flushbarPosition: FlushbarPosition.TOP,
+        margin: EdgeInsets.only(
+            left: MediaQuery.of(this.context).size.width - 500 - 30, top: 15),
+        borderRadius: 8,
+        maxWidth: 500,
+        duration: Duration(milliseconds: 1500),
+        backgroundColor: AppColors.ok,
+        messageText: Text(
+          info,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 28, color: Colors.white),
+        ))
+      ..show(this.context);
   }
 
   showError(String error) {
@@ -138,9 +142,9 @@ class _OverviewPageState extends State<OverviewPage>
         flushbarStyle: FlushbarStyle.FLOATING,
         flushbarPosition: FlushbarPosition.TOP,
         margin: EdgeInsets.only(
-            left: MediaQuery.of(this.context).size.width - 400 - 30, top: 15),
+            left: MediaQuery.of(this.context).size.width - 500 - 30, top: 15),
         borderRadius: 8,
-        maxWidth: 400,
+        maxWidth: 500,
         duration: Duration(milliseconds: 2000),
         backgroundColor: AppColors.error,
         messageText: Text(
@@ -153,7 +157,7 @@ class _OverviewPageState extends State<OverviewPage>
 
   bool _validId = false;
   bool _validProp = false;
-
+  double radius() => 10;
   final FocusNode cardIdFocus = FocusNode();
   // final FocusNode _cardIdFocus = FocusNode();
   final FocusNode propertyFocus = FocusNode();
@@ -225,7 +229,7 @@ class _OverviewPageState extends State<OverviewPage>
                             child: Column(children: <Widget>[
                               Text(tr('cardId'),
                                   style: TextStyle(fontSize: 40)),
-                              SizedBox(height: 20),
+                              SizedBox(height: 10),
                               TextFormField(
                                 // enabled: false,
                                 // decoration: InputDecoration(
@@ -239,11 +243,21 @@ class _OverviewPageState extends State<OverviewPage>
                                 autocorrect: false,
                                 autovalidate: true,
                                 decoration: InputDecoration(
-                                  prefixIcon: Icon(
-                                    MaterialCommunityIcons.getIconData(
-                                        "account-card-details"),
-                                    size: 45,
-                                  ),
+                                  // prefixIcon: Icon(
+                                  //   MaterialCommunityIcons.getIconData(
+                                  //       "account-card-details"),
+                                  //   size: 45,
+                                  // ),
+                                  suffix: _cardIdFieldController.text.isNotEmpty
+                                      ? IconButton(
+                                          iconSize: 35,
+                                          onPressed: () {
+                                            loadDetails(
+                                                _cardIdFieldController.text);
+                                          },
+                                          icon: Icon(Icons.input),
+                                        )
+                                      : null,
                                 ),
                                 validator: (value) {
                                   refresh(() => _validId = value.isNotEmpty);
@@ -252,6 +266,8 @@ class _OverviewPageState extends State<OverviewPage>
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                     fontSize: 45,
+                                    // fontWeight: FontWeight.bold,
+                                    // fontFamily: 'Advanced_Led_Board-7.ttf',
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.brightText),
                                 key: _cardIdFieldKey,
@@ -259,12 +275,12 @@ class _OverviewPageState extends State<OverviewPage>
                               ),
                             ]),
                           ),
-                          SizedBox(width: 20),
+                          SizedBox(width: 30),
                           Expanded(
                             child: Column(children: <Widget>[
                               Text(tr('balance'),
                                   style: TextStyle(fontSize: 40)),
-                              SizedBox(height: 20),
+                              SizedBox(height: 10),
                               TextFormField(
                                 // enabled: false,
                                 // decoration: InputDecoration(
@@ -278,18 +294,18 @@ class _OverviewPageState extends State<OverviewPage>
                                 autocorrect: false,
                                 autovalidate: true,
                                 decoration: InputDecoration(
-                                  suffixText:
-                                      _balanceFieldController.text.isNotEmpty
-                                          ? "Ft"
-                                          : null,
-                                  suffixStyle: TextStyle(
-                                      color: AppColors.brightText,
-                                      fontSize: 35),
-                                  prefixIcon: Icon(
-                                    Icons.monetization_on,
-                                    size: 45,
-                                  ),
-                                ),
+                                    // suffixText:
+                                    //     _balanceFieldController.text.isNotEmpty
+                                    //         ? "Ft"
+                                    //         : null,
+                                    // suffixStyle: TextStyle(
+                                    //     color: AppColors.brightText,
+                                    //     fontSize: 35),
+                                    // prefixIcon: Icon(
+                                    //   Icons.monetization_on,
+                                    //   size: 45,
+                                    // ),
+                                    ),
                                 validator: (value) {
                                   refresh(() => _validId = value.isNotEmpty);
                                   return null;
@@ -298,6 +314,7 @@ class _OverviewPageState extends State<OverviewPage>
                                 style: TextStyle(
                                     fontSize: 45,
                                     fontWeight: FontWeight.bold,
+                                    // fontFamily: 'Arcade',
                                     color: AppColors.brightText),
                                 controller: _balanceFieldController,
                               ),
@@ -309,7 +326,7 @@ class _OverviewPageState extends State<OverviewPage>
                         child: Column(
                           children: <Widget>[
                             Text(tr('amount'), style: TextStyle(fontSize: 40)),
-                            SizedBox(height: 20),
+                            SizedBox(height: 10),
                             RawKeyboardListener(
                               focusNode: _propertyFocus,
                               onKey: (event) {
@@ -354,9 +371,11 @@ class _OverviewPageState extends State<OverviewPage>
                                 controller: _propertyFieldController,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                    fontSize: 55,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.accent),
+                                  fontSize: 75,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.accent,
+                                  // fontFamily: 'Digit',
+                                ),
                                 key: _propertyFieldKey,
                                 validator: (value) {
                                   if (value.isNotEmpty) {
@@ -365,15 +384,19 @@ class _OverviewPageState extends State<OverviewPage>
                                       amount = int.parse(value);
                                     } catch (e) {
                                       refresh(() => _validProp = false);
-                                      return "Not a number";
+                                      return tr("notNumber");
                                     }
 
                                     if (amount <= 0) {
                                       refresh(() => _validProp = false);
-                                      return "Amount must be positive";
+                                      return tr("mustBePositive");
                                     }
                                   }
-                                  refresh(() => _validProp = value.isNotEmpty);
+                                  refresh(() {
+                                    _validProp = value.isNotEmpty;
+                                    isButtonsActive = _validProp &&
+                                        _cardIdFieldController.text.isNotEmpty;
+                                  });
                                   return null;
                                 },
                               ),
@@ -404,6 +427,7 @@ class _OverviewPageState extends State<OverviewPage>
               Container(
                 decoration: BoxDecoration(
                     color: Colors.black,
+                    borderRadius: BorderRadius.circular(radius()),
                     border: Border.all(
                       width: 3,
                       color: AppColors.brightText,
@@ -460,7 +484,9 @@ class _OverviewPageState extends State<OverviewPage>
       }
     }
     // Update the screen
-    setState(() {});
+    setState(() {
+      if (ctrl == _propertyFieldController) {}
+    });
   }
 
   bool isButtonsActive = true;
@@ -473,6 +499,7 @@ class _OverviewPageState extends State<OverviewPage>
           child: Container(
             decoration: BoxDecoration(
                 color: Colors.black,
+                borderRadius: BorderRadius.circular(radius()),
                 border: Border.all(
                   width: 3,
                   color: isButtonsActive
@@ -611,73 +638,11 @@ class _OverviewPageState extends State<OverviewPage>
                   List<DbRecord> records = [];
                   try {
                     records = serializeRecordsFromCSV(fs);
-                    showDialog<void>(
-                      barrierDismissible: true,
-                      context: context,
-                      builder: (context) {
-                        return ProgressDialog(
-                            key: importKey,
-                            progress: 0,
-                            maxCount: records.length);
-                      },
-                    );
-                    app.db.import(records, onProgress: (p) {
-                      setState(() {
-                        importKey.currentState.progress.value = p;
-                      });
-                    }).then((_) {
-                      setState(() {
-                        // _dbRecordsDataSource
-                        //     .init(_cardNumberFieldKey.currentState.value);
-                      });
-                    });
+                    await app.db.import(records);
+                    showInfo(
+                        "${tr('importAction')} ${tr('succeeded')} ${records.length}/${records.length}");
                   } catch (e) {
-                    await showDialog<void>(
-                      barrierDismissible: false,
-                      context: context,
-                      builder: (context) {
-                        Future.delayed(Duration(milliseconds: 3000),
-                            () => Navigator.maybePop(context));
-                        return AlertDialog(
-                          content: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                MaterialIcons.getIconData('warning'),
-                                size: 40,
-                                color: Colors.red.shade600,
-                              ),
-                              SizedBox(width: 25),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "${tr('importAction')} ${tr('failed')}",
-                                      style: TextStyle(
-                                          fontSize: 21,
-                                          fontWeight: FontWeight.bold),
-                                      // textAlign: TextAlign.center,
-                                    ),
-                                    SizedBox(height: 10),
-                                    Flexible(
-                                      child: Text(
-                                        e.toString(),
-                                        // textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                            fontSize: 21,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
+                    showError("${tr('importAction')} ${tr('failed')}");
                   }
                 },
               ),
@@ -713,64 +678,8 @@ class _OverviewPageState extends State<OverviewPage>
                       "export-${DateTime.now().toIso8601String().replaceAll(".", "").replaceAll(":", "").replaceAll("-", "").replaceAll(" ", "")}.csv"));
                   exportFile.writeAsStringSync(serializedRecords);
                   print("Export succeeded to '${exportFile.absolute.path}'");
-                  await showDialog<void>(
-                    barrierDismissible: true,
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Flexible(
-                                child: Text(tr('progress'),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold))),
-                            SizedBox(height: 20),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: <Widget>[
-                                Icon(
-                                  Icons.check,
-                                  size: 40,
-                                  color: Colors.green.shade600,
-                                ),
-                                SizedBox(width: 10),
-                                Text(
-                                  "${tr('importAction')} ${tr('succeeded')} (${records.length} / ${records.length})",
-                                  style: TextStyle(
-                                      fontSize: 21,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                            Flexible(
-                                child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 10.0),
-                              child: LinearProgressIndicator(
-                                value: 1,
-                              ),
-                            )),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: <Widget>[
-                                MaterialButton(
-                                  child: Text(tr('close')),
-                                  onPressed: () {
-                                    // initDb(_cardNumberFieldKey
-                                    //     .currentState.value);
-                                    Navigator.maybePop(context);
-                                  },
-                                )
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
+                  showInfo(
+                      "${tr('exportAction')} ${tr('succeeded')} ${records.length}/${records.length}");
                 },
               ),
             ),
@@ -810,18 +719,15 @@ class _OverviewPageState extends State<OverviewPage>
         continue;
       }
 
-      if (splitted[columnIds['ID']].isEmpty ||
-          splitted[columnIds['NAME']].isEmpty) {
+      if (splitted[columnIds['ID']].isEmpty) {
         print("Skipped record due to missing or empty property '${[
-          splitted[columnIds['ID']],
-          splitted[columnIds['NAME']]
+          splitted[columnIds['ID']]
         ]}'");
         continue;
       }
 
       res.add(DbRecord(
         splitted[columnIds['ID']],
-        splitted[columnIds['NAME']],
         columnIds['BALANCE'] == -1
             ? null
             : int.tryParse(splitted[columnIds['BALANCE']]),
@@ -834,9 +740,9 @@ class _OverviewPageState extends State<OverviewPage>
   List<String> serializeRecordsIntoCSV(List<DbRecord> records) {
     const String SEP = ";";
 
-    List<String> res = ['ID${SEP}NAME${SEP}BALANCE$SEP'];
+    List<String> res = ['ID${SEP}BALANCE$SEP'];
     records.forEach((record) {
-      res.add("${record.id}$SEP${record.name}$SEP${record.balance}$SEP");
+      res.add("${record.id}$SEP${record.balance}$SEP");
     });
 
     return res;

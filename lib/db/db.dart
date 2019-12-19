@@ -47,8 +47,6 @@ class DbRecordDataSource extends DataTableSource {
       cells: <DataCell>[
         DataCell(Text('${dbRecord.id}',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-        DataCell(Text('${dbRecord.name}',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
         DataCell(Text('${dbRecord.balance} HUF',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
       ],
@@ -71,11 +69,18 @@ class DbRecordDataSource extends DataTableSource {
   }
 }
 
+enum DbExceptions {
+  noRows,
+  tooManyRows,
+  alreadyExist,
+  negativeBalance,
+  unknown
+}
+
 class DbRecord {
-  DbRecord(this.id, this.name, this.balance);
+  DbRecord(this.id, this.balance);
 
   String id;
-  String name;
   int balance;
 
   bool selected = false;
@@ -103,47 +108,61 @@ class Db {
     // host: 'localhost', port: 3306, user: 'root', password: 'admin', db: 'cashcard'));
   }
 
-  Future close() async {
+  Future disconnect() async {
     assert(_connection != null);
     await _connection.close();
+    _connection = null;
   }
 
   Future getAll(String searchTerm) async {
     // Query the database using a parameterized query
-    var results = await _connection.query(
-        'select id, name, balance from balance where (name like ? or id like ?) and del_sp = "0000-00-00"',
-        ['%$searchTerm%', '%$searchTerm%']);
     List<DbRecord> res = [];
-    for (int i = 0; i < results.length; i++)
-      res.add(DbRecord(results.elementAt(i)[0], results.elementAt(i)[1],
-          results.elementAt(i)[2]));
-
+    try {
+      await connect();
+      var results = await _connection.query(
+          'select id, balance from balance where (id like ?) and del_sp = "0000-00-00"',
+          ['%$searchTerm%']);
+      for (int i = 0; i < results.length; i++)
+        res.add(DbRecord(results.elementAt(i)[0], results.elementAt(i)[1]));
+    } finally {
+      await disconnect();
+    }
     return res;
   }
 
-  Future register(String id, String name) async {
-    // Query the database using a parameterized query
-    var results = await _connection.query(
-        'select id, name from balance where id = ? and del_sp = "0000-00-00"',
-        [id]);
+  Future register(String id) async {
+    try {
+      await connect();
+      // Query the database using a parameterized query
+      var results = await _connection.query(
+          'select id from balance where id = ? and del_sp = "0000-00-00"',
+          [id]);
 
-    if (results.length != 0) throw ("alreadyExist");
-    // Insert some data
-    var result = await _connection
-        .query('insert into balance (id, name) values (?, ?)', [id, name]);
-    print("Inserted row (${result.affectedRows} record) ${[id, name]}");
+      if (results.length != 0) throw DbExceptions.alreadyExist;
+      // Insert some data
+      var result =
+          await _connection.query('insert into balance (id) values (?)', [id]);
+      print("Inserted row (${result.affectedRows} record) ${[id]}");
+    } finally {
+      await disconnect();
+    }
   }
 
   Future<DbRecord> get(String id) async {
-    // Query the database using a parameterized query
-    var results = await _connection.query(
-        'select id, name, balance from balance where id = ? and del_sp = "0000-00-00"',
-        [id]);
+    try {
+      await connect();
+      // Query the database using a parameterized query
+      var results = await _connection.query(
+          'select id, balance from balance where id = ? and del_sp = "0000-00-00"',
+          [id]);
 
-    if (results.length < 1)
-      throw ("noRows");
-    else if (results.length > 1) throw ("tooManyResult");
-    return DbRecord(results.first[0], results.first[1], results.first[2]);
+      if (results.length < 1)
+        throw DbExceptions.noRows;
+      else if (results.length > 1) throw DbExceptions.tooManyRows;
+      return DbRecord(results.first[0], results.first[1]);
+    } finally {
+      await disconnect();
+    }
   }
 
   Future pay(String id, int amount) {
@@ -157,57 +176,73 @@ class Db {
   }
 
   Future delete(List<String> ids) async {
-    var result = await _connection.query(
-        'update balance set del_sp = SYSDATE(), del_sp = SYSDATE() where id in (${List.generate(ids.length, (_) => "?").join(',')}) and del_sp = "0000-00-00"',
-        ids);
-    print("Deleted rows (${result.affectedRows} record) $ids");
+    try {
+      await connect();
+      var result = await _connection.query(
+          'update balance set del_sp = SYSDATE(), del_sp = SYSDATE() where id in (${List.generate(ids.length, (_) => "?").join(',')}) and del_sp = "0000-00-00"',
+          ids);
+      print("Deleted rows (${result.affectedRows} record) $ids");
+    } finally {
+      await disconnect();
+    }
   }
 
   Future import(List<DbRecord> records, {Function(double) onProgress}) async {
-    int imported = 0;
-    for (int i = 0; i < records.length; i++) {
-      var result = await _connection.query(
-          'insert into balance (id, name) values (?, ?) ON DUPLICATE KEY UPDATE name = ?, balance = 0',
-          [
-            records[i].id,
-            records[i].name,
-            records[i].name,
-          ]);
-      print("Imported row (${result.affectedRows} records) " +
-          [records[i].id, records[i].name].toString());
+    try {
+      await connect();
+      int imported = 0;
+      for (int i = 0; i < records.length; i++) {
+        var result = await _connection.query(
+            'insert into balance (id) values (?) ON DUPLICATE KEY UPDATE balance = 0',
+            [
+              records[i].id,
+            ]);
+        print("Imported row (${result.affectedRows} records) " +
+            [records[i].id].toString());
 
-      if (onProgress != null) imported++;
-      onProgress(imported / records.length);
+        if (onProgress != null) {
+          imported++;
+          onProgress(imported / records.length);
+        }
+      }
+      if (imported > 0) print("Imported rows ($imported records)");
+    } finally {
+      await disconnect();
     }
-    if (imported > 0) print("Imported rows ($imported records)");
   }
 
   Future changeBalance(String id, int amount) async {
     assert(id != null && id.isNotEmpty && amount != null);
-    // Query the database using a parameterized query
-    var results = await _connection.query(
-        'select id, name, balance from balance where id = ? and del_sp = "0000-00-00"',
-        [id]);
+    try {
+      await connect();
+      // Query the database using a parameterized query
+      var results = await _connection.query(
+          'select id, balance from balance where id = ? and del_sp = "0000-00-00"',
+          [id]);
 
-    if (results.length < 1)
-      throw ("noRows");
-    else if (results.length > 1)
-      throw ("tooManyResult");
-    else if (results.length == 1) {
-      print(
-          'Card ID: ${results.first[0]}, name: ${results.first[1]}, balance: ${results.first[2]}');
+      if (results.length < 1)
+        throw DbExceptions.noRows;
+      else if (results.length > 1)
+        throw DbExceptions.tooManyRows;
+      else if (results.length == 1) {
+        print('Card ID: ${results.first[0]}, balance: ${results.first[1]}');
 
-      int origBalance = results.first[2];
-      // Less then zero, PAY is NOT allowed
-      if (origBalance <= 0 && amount < 0) {
-        throw ("negativeBalance");
-      } else {
-        var result = await _connection.query(
-            'update balance set balance = balance + ? where id = ? and del_sp = "0000-00-00"',
-            [amount, id]);
-        print(
-            "Inserted rows (${result.affectedRows} record) [${[id, amount]}]");
+        int origBalance = results.first[1];
+        // Less then zero, PAY is NOT allowed
+        if ((origBalance <= 0 && amount < 0) || origBalance + amount < 0) {
+          throw DbExceptions.negativeBalance;
+        } else {
+          var result = await _connection.query(
+              'update balance set balance = balance + ? where id = ? and del_sp = "0000-00-00"',
+              [amount, id]);
+          print("Inserted rows (${result.affectedRows} record) [${[
+            id,
+            amount
+          ]}]");
+        }
       }
+    } finally {
+      await disconnect();
     }
   }
 }

@@ -24,14 +24,6 @@ COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
 
-DELIMITER //
-
-CREATE OR REPLACE TRIGGER insert_balance_log 
-AFTER
-UPDATE
-   ON `balance` FOR EACH ROW
-BEGIN
-	 INSERT INTO `balance_log` (id, eff_sp, amount) VALUES (NEW.id, SYSDATE(), NEW.balance - OLD.balance);
-END; //
-
-DELIMITER ;
+CREATE OR REPLACE TRIGGER insert_balance_log AFTER UPDATE
+ ON `balance` FOR EACH ROW
+  INSERT INTO `balance_log` (id, eff_sp, amount) VALUES (NEW.id, SYSDATE(), NEW.balance - OLD.balance);

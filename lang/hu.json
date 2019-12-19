@@ -76,6 +76,14 @@
     "authorEmail": "belakovics.akos@gmail.com",
     "about": "A CashCard alkalmazást szerettel és teljes odaadással fordították és készítették.",
     "version": "Verzió",
-    "versionNumber": "0.0.1-beta",
+    "versionNumber": "0.0.2-beta",
+    " - Validation messages - ": "-----------------------------",
+    "mustBePositive": "Összegnek pozitívnak kell lennie",
+    "notNumber": "Nem egész szám",
+    "DbExceptions.noRows": "Ismeretlen azonosító",
+    "DbExceptions.tooManyRows": "Azonosítóütközés",
+    "DbExceptions.alreadyExist": "Már létezik",
+    "DbExceptions.negativeBalance": "Nincs elég fedezet",
+    "DbExceptions.unknown": "Rendszerhiba",
     "": ""
 }

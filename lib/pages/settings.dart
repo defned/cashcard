@@ -461,7 +461,7 @@ class _SettingsPageState extends State<SettingsPage>
                     String dbName = _databaseNameFieldKey.currentState.value;
                     try {
                       try {
-                        await app.db.close();
+                        // await app.db.disconnect();
                       } catch (e) {}
                       app.db = Db(
                         host: dbHost,
@@ -470,7 +470,7 @@ class _SettingsPageState extends State<SettingsPage>
                         userName: dbUserName,
                         password: dbPassword,
                       );
-                      await app.db.connect();
+                      // await app.db.connect();
                       AppConfig.dbHost = dbHost;
                       AppConfig.dbPort = dbPort;
                       AppConfig.dbName = dbName;
@@ -489,7 +489,7 @@ class _SettingsPageState extends State<SettingsPage>
                           content: Text(
                               "${tr('database')} ${tr('refresh').toLowerCase()} ${tr('failed')} - ${e.toString()}")));
                       try {
-                        await app.db.close();
+                        await app.db.disconnect();
                       } catch (e) {}
                       app.db = Db(
                         host: AppConfig.dbHost,

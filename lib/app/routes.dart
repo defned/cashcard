@@ -1,5 +1,4 @@
 import 'package:example_flutter/pages/overview.dart';
-import 'package:example_flutter/pages/registration.dart';
 import 'package:example_flutter/util/logging.dart';
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
@@ -21,9 +20,9 @@ class Routes {
       return OverviewPage();
     }));
 
-    router.define(registrationPage, handler: Handler(
-        handlerFunc: (BuildContext context, Map<String, List<String>> params) {
-      return RegistrationPage();
-    }));
+    // router.define(registrationPage, handler: Handler(
+    //     handlerFunc: (BuildContext context, Map<String, List<String>> params) {
+    //   return RegistrationPage();
+    // }));
   }
 }

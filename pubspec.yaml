@@ -46,6 +46,18 @@ flutter:
 
   # See https://github.com/flutter/flutter/wiki/Desktop-shells#fonts
   fonts:
+    - family: Digit
+      fonts:
+        - asset: fonts/Digit/Digit.ttf
+          weight: 500
+    - family: Advanced_Led_Board-7
+      fonts:
+        - asset: fonts/Advanced_Led_Board-7/Advanced_Led_Board-7.ttf
+          weight: 500
+    - family: Arcade
+      fonts:
+        - asset: fonts/Arcade/Arcade.ttf
+          weight: 500
     - family: Roboto
       fonts:
         - asset: fonts/Roboto/Roboto-Thin.ttf

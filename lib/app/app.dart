@@ -34,11 +34,11 @@ class Application extends WidgetsBindingObserver {
   }
 
   void init() {
-    db.connect();
+    // db.connect();
   }
 
   void dipose() {
-    db.close();
+    // db.disconnect();
   }
 }
 

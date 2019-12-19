@@ -77,6 +77,14 @@
     "authorEmail": "belakovics.akos@gmail.com",
     "about": "The CashCard application was made and compiled by love.",
     "version": "Version",
-    "versionNumber": "0.0.1-beta",
+    "versionNumber": "0.0.2-beta",
+    " - Validation messages - ": "-----------------------------",
+    "mustBePositive": "Amount must be positive",
+    "notNumber": "Not a number",
+    "DbExceptions.noRows": "Account not found",
+    "DbExceptions.tooManyRows": "Account collision",
+    "DbExceptions.alreadyExist": "Already exist",
+    "DbExceptions.negativeBalance": "Not enough balance",
+    "DbExceptions.unknown": "System error",
     "": ""
 }
