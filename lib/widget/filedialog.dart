@@ -135,9 +135,9 @@ class _FileDialogState extends State<FileDialog>
         SizedBox(height: 10),
         Text(widget.title,
             style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            )),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).textTheme.body1.color)),
         SizedBox(height: 15),
         Expanded(
           child: Card(

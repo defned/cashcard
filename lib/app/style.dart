@@ -14,7 +14,7 @@ class AppColors {
   static const Color white_backgroundColor = Color(0xFFF2F2F2);
   static const Color black_backgroundColor = Color(0xFF000000);
   static const Color enabledColor = Color(0xFF32383d);
-  static const Color disabledColor = Color(0xFFD6D6D6);
+  static const Color disabledColor = Color(0xFF606060);
   // static const Color accent = Color(0xFF074DFC);
   static const Color accent = Color(0xFFFFEB3B);
   static const Color accent2 = Color(0xFFFF3762);

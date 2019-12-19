@@ -1,15 +1,18 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:path/path.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:example_flutter/app/app.dart';
 import 'package:example_flutter/app/style.dart';
+import 'package:example_flutter/db/db.dart';
 import 'package:example_flutter/main.dart';
-import 'package:example_flutter/pages/pay.dart';
-import 'package:example_flutter/pages/settings.dart';
-import 'package:example_flutter/pages/topup.dart';
 import 'package:example_flutter/util/extensions.dart';
+import 'package:example_flutter/widget/filedialog.dart';
+import 'package:example_flutter/widget/progressdialog.dart';
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:virtual_keyboard/virtual_keyboard.dart';
 
@@ -52,11 +55,13 @@ class _OverviewPageState extends State<OverviewPage>
   void initState() {
     super.initState();
     _subscription = serialPort.stream.listen((onData) {
-      _cardIdFieldController.text = onData;
       app.db.get(onData).then((record) {
+        resetFields();
+        _cardIdFieldController.text = onData;
         _balanceFieldController.text = "${record.balance} Ft";
+      }, onError: (e) {
+        showError(e.toString());
       });
-      propertyFocus.requestFocus();
     });
   }
 
@@ -66,136 +71,33 @@ class _OverviewPageState extends State<OverviewPage>
     super.dispose();
   }
 
-  void showModal() {
-    if (!isBusy && !Navigator.of(context).canPop()) {
-      isBusy = true;
-      app.db.get("onData").then((record) async {
-        await showDialog<void>(
-          barrierDismissible: false,
-          context: context,
-          builder: (context) {
-            Future.delayed(Duration(milliseconds: 3000), () {
-              Navigator.maybePop(context);
-              isBusy = false;
-            });
-            return AlertDialog(
-              content: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    MaterialCommunityIcons.getIconData("account-card-details"),
-                    size: 100,
-                  ),
-                  SizedBox(width: 25),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 5),
-                        RichText(
-                            text: TextSpan(
-                          text: "${tr('cardId')}: ",
-                          children: [
-                            TextSpan(
-                                text: "${record.id}",
-                                style: TextStyle(
-                                    fontSize: 21,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.w900))
-                          ],
-                          style: TextStyle(
-                              fontSize: 21,
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold),
-                        )),
-                        SizedBox(height: 10),
-                        RichText(
-                            text: TextSpan(
-                          text: "${tr('name')}: ",
-                          children: [
-                            TextSpan(
-                                text: "${record.name}",
-                                style: TextStyle(
-                                    fontSize: 21,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.w900))
-                          ],
-                          style: TextStyle(
-                              fontSize: 21,
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold),
-                        )),
-                        SizedBox(height: 10),
-                        RichText(
-                            text: TextSpan(
-                          text: "${tr('balance')}: ",
-                          children: [
-                            TextSpan(
-                                text: "${record.balance} HUF",
-                                style: TextStyle(
-                                    fontSize: 21,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.w900))
-                          ],
-                          style: TextStyle(
-                              fontSize: 21,
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold),
-                        )),
-                        SizedBox(height: 5),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      }, onError: (e) async {
-        String trErr = tr(e.toString());
-        if (trErr == null) trErr = e.toString();
-
-        await showDialog<void>(
-          barrierDismissible: false,
-          context: context,
-          builder: (context) {
-            Future.delayed(Duration(milliseconds: 3000), () {
-              Navigator.maybePop(context);
-              isBusy = false;
-            });
-            return AlertDialog(
-              content: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    MaterialIcons.getIconData('warning'),
-                    size: 40,
-                    color: AppColors.error,
-                  ),
-                  SizedBox(width: 25),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 10),
-                        Text(
-                          trErr,
-                          style: TextStyle(
-                              fontSize: 21, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 10),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      });
+  pay() async {
+    try {
+      await app.db.topUp(_cardIdFieldController.text,
+          int.parse(_propertyFieldController.text));
+      resetFields();
+    } catch (e) {
+      showError(e.toString());
     }
+  }
+
+  topUp() async {
+    try {
+      await app.db.topUp(_cardIdFieldController.text,
+          int.parse(_propertyFieldController.text));
+      resetFields();
+    } catch (e) {
+      showError(e.toString());
+    }
+  }
+
+  resetFields() {
+    setState(() {
+      _cardIdFieldController.clear();
+      _balanceFieldController.clear();
+      _propertyFieldController.clear();
+      propertyFocus.requestFocus();
+    });
   }
 
   validate() async {
@@ -212,7 +114,7 @@ class _OverviewPageState extends State<OverviewPage>
           flushbarStyle: FlushbarStyle.FLOATING,
           flushbarPosition: FlushbarPosition.TOP,
           margin: EdgeInsets.only(
-              left: MediaQuery.of(context).size.width - 400 - 30, top: 15),
+              left: MediaQuery.of(this.context).size.width - 400 - 30, top: 15),
           borderRadius: 8,
           maxWidth: 400,
           duration: Duration(milliseconds: 1500),
@@ -222,36 +124,40 @@ class _OverviewPageState extends State<OverviewPage>
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 28, color: Colors.white),
           ))
-        ..show(context);
+        ..show(this.context);
     } catch (e) {
       String trErr = tr(e.toString());
       if (trErr == null) trErr = e.toString();
-
-      Flushbar(
-          flushbarStyle: FlushbarStyle.FLOATING,
-          flushbarPosition: FlushbarPosition.TOP,
-          margin: EdgeInsets.only(
-              left: MediaQuery.of(context).size.width - 400 - 30, top: 15),
-          borderRadius: 8,
-          maxWidth: 400,
-          duration: Duration(milliseconds: 2000),
-          backgroundColor: AppColors.error,
-          messageText: Text(
-            "${tr('payPageTitle')} ${tr('failed')}",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 28, color: Colors.white),
-          ))
-        ..show(context);
+      showError("${tr('payPageTitle')} ${tr('failed')}");
     }
     isBusy = false;
+  }
+
+  showError(String error) {
+    Flushbar(
+        flushbarStyle: FlushbarStyle.FLOATING,
+        flushbarPosition: FlushbarPosition.TOP,
+        margin: EdgeInsets.only(
+            left: MediaQuery.of(this.context).size.width - 400 - 30, top: 15),
+        borderRadius: 8,
+        maxWidth: 400,
+        duration: Duration(milliseconds: 2000),
+        backgroundColor: AppColors.error,
+        messageText: Text(
+          error,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 28, color: Colors.white),
+        ))
+      ..show(this.context);
   }
 
   bool _validId = false;
   bool _validProp = false;
 
   final FocusNode cardIdFocus = FocusNode();
-  final FocusNode _cardIdFocus = FocusNode();
+  // final FocusNode _cardIdFocus = FocusNode();
   final FocusNode propertyFocus = FocusNode();
+  final FocusNode _pageFocus = FocusNode();
   final FocusNode _propertyFocus = FocusNode();
 
   void refresh(Function f) {
@@ -275,209 +181,244 @@ class _OverviewPageState extends State<OverviewPage>
               onPressed: showAbout)
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            Expanded(
-              flex: 10,
-              child: Container(
-                constraints: BoxConstraints(maxWidth: 1000),
-                padding: const EdgeInsets.symmetric(horizontal: 50.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    Expanded(
-                      child: Row(children: <Widget>[
-                        Expanded(
-                          child: Column(children: <Widget>[
-                            Text(tr('cardId'), style: TextStyle(fontSize: 40)),
-                            SizedBox(height: 20),
-                            TextFormField(
-                              // enabled: false,
-                              // decoration: InputDecoration(
-                              //   focusedBorder: InputBorder.none,
-                              //   enabledBorder: InputBorder.none,
-                              // ),
-                              focusNode: cardIdFocus,
-                              cursorColor: Colors.transparent,
-                              enableSuggestions: false,
-                              autofocus: true,
-                              autocorrect: false,
-                              autovalidate: true,
-                              decoration: InputDecoration(
-                                prefixIcon: Icon(
-                                  MaterialCommunityIcons.getIconData(
-                                      "account-card-details"),
-                                  size: 45,
-                                ),
-                              ),
-                              validator: (value) {
-                                refresh(() => _validId = value.isNotEmpty);
-                                return null;
-                              },
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontSize: 45,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.brightText),
-                              key: _cardIdFieldKey,
-                              controller: _cardIdFieldController,
-                            ),
-                          ]),
-                        ),
-                        SizedBox(width: 20),
-                        Expanded(
-                          child: Column(children: <Widget>[
-                            Text(tr('balance'), style: TextStyle(fontSize: 40)),
-                            SizedBox(height: 20),
-                            TextFormField(
-                              // enabled: false,
-                              // decoration: InputDecoration(
-                              //   focusedBorder: InputBorder.none,
-                              //   enabledBorder: InputBorder.none,
-                              // ),
-                              // focusNode: cardIdFocus,
-                              cursorColor: Colors.transparent,
-                              enableSuggestions: false,
-                              autofocus: true,
-                              autocorrect: false,
-                              autovalidate: true,
-                              decoration: InputDecoration(
-                                suffixText:
-                                    _balanceFieldController.text.isNotEmpty
-                                        ? "Ft"
-                                        : null,
-                                prefixIcon: Icon(
-                                  Icons.monetization_on,
-                                  size: 45,
-                                ),
-                              ),
-                              validator: (value) {
-                                refresh(() => _validId = value.isNotEmpty);
-                                return null;
-                              },
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontSize: 45,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.brightText),
-                              // key: _cardIdFieldKey,
-                              controller: _balanceFieldController,
-                            ),
-                            // SizedBox(height: 20),
-                          ]),
-                        ),
-                      ]),
-                    ),
-                    // SizedBox(height: 50),
-                    Expanded(
-                      child: Column(
-                        children: <Widget>[
-                          Text(tr('amount'), style: TextStyle(fontSize: 40)),
-                          SizedBox(height: 20),
-                          RawKeyboardListener(
-                            focusNode: _propertyFocus,
-                            onKey: (event) {
-                              if (event.logicalKey.keyId == 54 &&
-                                  (_propertyFieldKey.currentState.value
-                                          as String)
-                                      .isNotEmpty) {
-                                validate();
-                              }
-                            },
-                            child: TextFormField(
-                              cursorColor: Colors.transparent,
-                              focusNode: propertyFocus,
-                              autocorrect: false,
-                              autovalidate: true,
-                              enableSuggestions: false,
-                              decoration: InputDecoration(
-                                prefixText: "Ft",
-                                suffixIcon: _propertyFieldController
-                                        .text.isNotEmpty
-                                    ? IconButton(
-                                        iconSize: 35,
-                                        onPressed: () {
-                                          Future.delayed(
-                                                  Duration(milliseconds: 50))
-                                              .then((_) {
-                                            setState(() {
-                                              _propertyFieldController.clear();
-                                              FocusScope.of(context).unfocus();
-                                            });
-                                          });
-                                        },
-                                        icon: Icon(Icons.clear),
-                                      )
-                                    : null,
-                              ),
-                              controller: _propertyFieldController,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontSize: 55,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.accent),
-                              key: _propertyFieldKey,
-                              validator: (value) {
-                                if (value.isNotEmpty) {
-                                  int amount = 0;
-                                  try {
-                                    amount = int.parse(value);
-                                  } catch (e) {
-                                    refresh(() => _validProp = false);
-                                    return "Not a number";
-                                  }
+      body: RawKeyboardListener(
+        focusNode: _pageFocus,
+        onKey: (event) {
+          if (event is RawKeyDownEvent) {
+            bool isCTRL =
+                Platform.isMacOS ? event.isMetaPressed : event.isControlPressed;
 
-                                  if (amount <= 0) {
-                                    refresh(() => _validProp = false);
-                                    return "Amount must be positive";
-                                  }
-                                }
-                                refresh(() => _validProp = value.isNotEmpty);
-                                return null;
-                              },
-                            ),
+            bool isImport = event.logicalKey.keyLabel == "i";
+            bool isExport = event.logicalKey.keyLabel == "e";
+
+            if (isCTRL && isImport) {
+              showImportDialog();
+            } else if (isCTRL && isExport) {
+              showExportDialog();
+            }
+
+            // if (event.logicalKey.keyId == 54 &&
+            //     (_propertyFieldKey.currentState.value
+            //             as String)
+            //         .isNotEmpty) {
+            //   validate();
+            // }
+          }
+        },
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Expanded(
+                flex: 10,
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: 1000),
+                  padding: const EdgeInsets.symmetric(horizontal: 50.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      Expanded(
+                        child: Row(children: <Widget>[
+                          Expanded(
+                            child: Column(children: <Widget>[
+                              Text(tr('cardId'),
+                                  style: TextStyle(fontSize: 40)),
+                              SizedBox(height: 20),
+                              TextFormField(
+                                // enabled: false,
+                                // decoration: InputDecoration(
+                                //   focusedBorder: InputBorder.none,
+                                //   enabledBorder: InputBorder.none,
+                                // ),
+                                focusNode: cardIdFocus,
+                                cursorColor: Colors.transparent,
+                                enableSuggestions: false,
+                                autofocus: true,
+                                autocorrect: false,
+                                autovalidate: true,
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(
+                                    MaterialCommunityIcons.getIconData(
+                                        "account-card-details"),
+                                    size: 45,
+                                  ),
+                                ),
+                                validator: (value) {
+                                  refresh(() => _validId = value.isNotEmpty);
+                                  return null;
+                                },
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 45,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.brightText),
+                                key: _cardIdFieldKey,
+                                controller: _cardIdFieldController,
+                              ),
+                            ]),
                           ),
-                        ],
+                          SizedBox(width: 20),
+                          Expanded(
+                            child: Column(children: <Widget>[
+                              Text(tr('balance'),
+                                  style: TextStyle(fontSize: 40)),
+                              SizedBox(height: 20),
+                              TextFormField(
+                                // enabled: false,
+                                // decoration: InputDecoration(
+                                //   focusedBorder: InputBorder.none,
+                                //   enabledBorder: InputBorder.none,
+                                // ),
+                                // focusNode: cardIdFocus,
+                                cursorColor: Colors.transparent,
+                                enableSuggestions: false,
+                                autofocus: true,
+                                autocorrect: false,
+                                autovalidate: true,
+                                decoration: InputDecoration(
+                                  suffixText:
+                                      _balanceFieldController.text.isNotEmpty
+                                          ? "Ft"
+                                          : null,
+                                  suffixStyle: TextStyle(
+                                      color: AppColors.brightText,
+                                      fontSize: 35),
+                                  prefixIcon: Icon(
+                                    Icons.monetization_on,
+                                    size: 45,
+                                  ),
+                                ),
+                                validator: (value) {
+                                  refresh(() => _validId = value.isNotEmpty);
+                                  return null;
+                                },
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 45,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.brightText),
+                                controller: _balanceFieldController,
+                              ),
+                            ]),
+                          ),
+                        ]),
                       ),
-                    ),
+                      Expanded(
+                        child: Column(
+                          children: <Widget>[
+                            Text(tr('amount'), style: TextStyle(fontSize: 40)),
+                            SizedBox(height: 20),
+                            RawKeyboardListener(
+                              focusNode: _propertyFocus,
+                              onKey: (event) {
+                                // if (event.logicalKey.keyId == 54 &&
+                                //     (_propertyFieldKey.currentState.value
+                                //             as String)
+                                //         .isNotEmpty) {
+                                //   validate();
+                                // }
+                              },
+                              child: TextFormField(
+                                cursorColor: Colors.transparent,
+                                focusNode: propertyFocus,
+                                autocorrect: false,
+                                autovalidate: true,
+                                enableSuggestions: false,
+                                decoration: InputDecoration(
+                                  prefixText: "Ft",
+                                  prefixStyle: TextStyle(
+                                      color: AppColors.brightText,
+                                      fontSize: 45),
+                                  suffixIcon: _propertyFieldController
+                                          .text.isNotEmpty
+                                      ? IconButton(
+                                          iconSize: 35,
+                                          onPressed: () {
+                                            Future.delayed(
+                                                    Duration(milliseconds: 50))
+                                                .then((_) {
+                                              setState(() {
+                                                _propertyFieldController
+                                                    .clear();
+                                                FocusScope.of(context)
+                                                    .unfocus();
+                                              });
+                                            });
+                                          },
+                                          icon: Icon(Icons.clear),
+                                        )
+                                      : null,
+                                ),
+                                controller: _propertyFieldController,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 55,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.accent),
+                                key: _propertyFieldKey,
+                                validator: (value) {
+                                  if (value.isNotEmpty) {
+                                    int amount = 0;
+                                    try {
+                                      amount = int.parse(value);
+                                    } catch (e) {
+                                      refresh(() => _validProp = false);
+                                      return "Not a number";
+                                    }
+
+                                    if (amount <= 0) {
+                                      refresh(() => _validProp = false);
+                                      return "Amount must be positive";
+                                    }
+                                  }
+                                  refresh(() => _validProp = value.isNotEmpty);
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                height: 150,
+                constraints: BoxConstraints(maxWidth: 800),
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  children: <Widget>[
+                    createButton(tr('topUp'), onTap: () {
+                      topUp();
+                    }),
+                    createButton(tr('pay'), onTap: () {
+                      pay();
+                    }),
                   ],
                 ),
               ),
-            ),
-            Container(
-              height: 150,
-              constraints: BoxConstraints(maxWidth: 800),
-              child: Row(
-                mainAxisSize: MainAxisSize.max,
-                children: <Widget>[
-                  createButton(tr('topUp'), onTap: jumpTo(TopUpPage())),
-                  // createButton(tr('balance'), onTap: jumpTo(PayPage())),
-                  createButton(tr('pay'), onTap: jumpTo(PayPage())),
-                ],
+              SizedBox(height: 20),
+              Container(
+                decoration: BoxDecoration(
+                    color: Colors.black,
+                    border: Border.all(
+                      width: 3,
+                      color: AppColors.brightText,
+                    )),
+                constraints: BoxConstraints(maxWidth: 600),
+                child: VirtualKeyboard(
+                    fontSize: 35,
+                    textColor: AppColors.brightText,
+                    height: 250,
+                    type: VirtualKeyboardType.Numeric,
+                    onKeyPress: _onKeyPress),
               ),
-            ),
-            SizedBox(height: 20),
-            Container(
-              decoration: BoxDecoration(
-                  color: Colors.black,
-                  border: Border.all(
-                    width: 3,
-                    color: AppColors.brightText,
-                  )),
-              constraints: BoxConstraints(maxWidth: 600),
-              child: VirtualKeyboard(
-                  fontSize: 35,
-                  textColor: AppColors.brightText,
-                  height: 250,
-                  type: VirtualKeyboardType.Numeric,
-                  onKeyPress: _onKeyPress),
-            ),
-            SizedBox(height: 40)
-          ],
+              SizedBox(height: 40)
+            ],
+          ),
         ),
       ),
     );
@@ -522,24 +463,34 @@ class _OverviewPageState extends State<OverviewPage>
     setState(() {});
   }
 
+  bool isButtonsActive = true;
   Widget createButton(String s, {Null Function() onTap}) {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: RawMaterialButton(
-          onPressed: onTap,
+          onPressed: isButtonsActive ? onTap : null,
           child: Container(
             decoration: BoxDecoration(
                 color: Colors.black,
                 border: Border.all(
                   width: 3,
-                  color: AppColors.brightText,
+                  color: isButtonsActive
+                      ? AppColors.brightText
+                      : AppColors.disabledColor,
                 )),
             padding:
                 const EdgeInsets.symmetric(horizontal: 30.0, vertical: 15.0),
             child: Center(
               child: AutoSizeText(s,
-                  style: TextStyle(fontSize: 50), maxLines: 1, group: group),
+                  style: TextStyle(
+                    fontSize: 50,
+                    color: isButtonsActive
+                        ? AppColors.brightText
+                        : AppColors.disabledColor,
+                  ),
+                  maxLines: 1,
+                  group: group),
             ),
           ),
         ),
@@ -550,7 +501,7 @@ class _OverviewPageState extends State<OverviewPage>
   void showAbout() {
     showDialog<void>(
       barrierDismissible: true,
-      context: context,
+      context: this.context,
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.white,
@@ -639,5 +590,255 @@ class _OverviewPageState extends State<OverviewPage>
         );
       },
     );
+  }
+
+  final importKey = GlobalKey<ProgressDialogState>();
+  showImportDialog() {
+    showDialog<void>(
+      barrierDismissible: false,
+      context: this.context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey.shade200,
+          content: Container(
+            width: MediaQuery.of(context).size.width / 2,
+            height: MediaQuery.of(context).size.height / 2,
+            child: Theme(
+              data: whiteTheme(),
+              child: FileDialog(
+                title: tr('importAction'),
+                onOpen: (fs) async {
+                  List<DbRecord> records = [];
+                  try {
+                    records = serializeRecordsFromCSV(fs);
+                    showDialog<void>(
+                      barrierDismissible: true,
+                      context: context,
+                      builder: (context) {
+                        return ProgressDialog(
+                            key: importKey,
+                            progress: 0,
+                            maxCount: records.length);
+                      },
+                    );
+                    app.db.import(records, onProgress: (p) {
+                      setState(() {
+                        importKey.currentState.progress.value = p;
+                      });
+                    }).then((_) {
+                      setState(() {
+                        // _dbRecordsDataSource
+                        //     .init(_cardNumberFieldKey.currentState.value);
+                      });
+                    });
+                  } catch (e) {
+                    await showDialog<void>(
+                      barrierDismissible: false,
+                      context: context,
+                      builder: (context) {
+                        Future.delayed(Duration(milliseconds: 3000),
+                            () => Navigator.maybePop(context));
+                        return AlertDialog(
+                          content: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                MaterialIcons.getIconData('warning'),
+                                size: 40,
+                                color: Colors.red.shade600,
+                              ),
+                              SizedBox(width: 25),
+                              Expanded(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "${tr('importAction')} ${tr('failed')}",
+                                      style: TextStyle(
+                                          fontSize: 21,
+                                          fontWeight: FontWeight.bold),
+                                      // textAlign: TextAlign.center,
+                                    ),
+                                    SizedBox(height: 10),
+                                    Flexible(
+                                      child: Text(
+                                        e.toString(),
+                                        // textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                            fontSize: 21,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  }
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  showExportDialog() {
+    final DbRecordDataSource _dbRecordsDataSource = DbRecordDataSource()
+      ..init("");
+    showDialog<void>(
+      barrierDismissible: false,
+      context: this.context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey.shade200,
+          content: Container(
+            width: MediaQuery.of(context).size.width / 2,
+            height: MediaQuery.of(context).size.height / 2,
+            child: Theme(
+              data: whiteTheme(),
+              child: FileDialog(
+                title: tr('exportAction'),
+                target: FileDialogTarget.DIRECTORY,
+                onOpen: (dir) async {
+                  List<DbRecord> records = _dbRecordsDataSource.getRecords();
+                  String serializedRecords =
+                      serializeRecordsIntoCSV(records).join("\n");
+                  File exportFile = File(join(dir.absolute.path,
+                      "export-${DateTime.now().toIso8601String().replaceAll(".", "").replaceAll(":", "").replaceAll("-", "").replaceAll(" ", "")}.csv"));
+                  exportFile.writeAsStringSync(serializedRecords);
+                  print("Export succeeded to '${exportFile.absolute.path}'");
+                  await showDialog<void>(
+                    barrierDismissible: true,
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Flexible(
+                                child: Text(tr('progress'),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold))),
+                            SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: <Widget>[
+                                Icon(
+                                  Icons.check,
+                                  size: 40,
+                                  color: Colors.green.shade600,
+                                ),
+                                SizedBox(width: 10),
+                                Text(
+                                  "${tr('importAction')} ${tr('succeeded')} (${records.length} / ${records.length})",
+                                  style: TextStyle(
+                                      fontSize: 21,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                            Flexible(
+                                child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 10.0),
+                              child: LinearProgressIndicator(
+                                value: 1,
+                              ),
+                            )),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: <Widget>[
+                                MaterialButton(
+                                  child: Text(tr('close')),
+                                  onPressed: () {
+                                    // initDb(_cardNumberFieldKey
+                                    //     .currentState.value);
+                                    Navigator.maybePop(context);
+                                  },
+                                )
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  List<DbRecord> serializeRecordsFromCSV(FileSystemEntity fs) {
+    if (fs is! File) throw tr('invalidImportSource');
+
+    List<String> lines = (fs as File).readAsLinesSync();
+    String firstLine = lines.first.toUpperCase();
+    Map<String, int> columnIds = {
+      'ID': 0,
+      'NAME': 0,
+      'BALANCE': 0,
+    };
+    if (!firstLine.contains(';')) throw tr('invalidImportFormat');
+
+    // Remapping indexes if needed
+    List<String> header = firstLine.split(';');
+    bool hasHeader = false;
+    if (firstLine.contains('ID') || firstLine.contains('NAME')) {
+      columnIds['ID'] = header.indexOf('ID');
+      columnIds['NAME'] = header.indexOf('NAME');
+      columnIds['BALANCE'] = header.indexOf('BALANCE');
+      hasHeader = true;
+    }
+
+    List<DbRecord> res = [];
+    for (var i = hasHeader ? 1 : 0; i < lines.length; i++) {
+      List<String> splitted = lines[i].split(';');
+      if (splitted.length != header.length) {
+        print(tr('malformedInput'));
+        continue;
+      }
+
+      if (splitted[columnIds['ID']].isEmpty ||
+          splitted[columnIds['NAME']].isEmpty) {
+        print("Skipped record due to missing or empty property '${[
+          splitted[columnIds['ID']],
+          splitted[columnIds['NAME']]
+        ]}'");
+        continue;
+      }
+
+      res.add(DbRecord(
+        splitted[columnIds['ID']],
+        splitted[columnIds['NAME']],
+        columnIds['BALANCE'] == -1
+            ? null
+            : int.tryParse(splitted[columnIds['BALANCE']]),
+      ));
+    }
+
+    return res;
+  }
+
+  List<String> serializeRecordsIntoCSV(List<DbRecord> records) {
+    const String SEP = ";";
+
+    List<String> res = ['ID${SEP}NAME${SEP}BALANCE$SEP'];
+    records.forEach((record) {
+      res.add("${record.id}$SEP${record.name}$SEP${record.balance}$SEP");
+    });
+
+    return res;
   }
 }
