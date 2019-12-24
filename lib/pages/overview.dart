@@ -188,16 +188,24 @@ class _OverviewPageState extends State<OverviewPage>
       body: RawKeyboardListener(
         focusNode: _pageFocus,
         onKey: (event) {
+          print(event);
           if (event is RawKeyDownEvent) {
-            bool isCTRL =
-                Platform.isMacOS ? event.isMetaPressed : event.isControlPressed;
+            // bool isCTRL = Platform.isMacOS
+            //     ? event.isMetaPressed
+            //     : event.isControlPressed || event.logicalKey.keyLabel == "9";
 
-            bool isImport = event.logicalKey.keyLabel == "i";
-            bool isExport = event.logicalKey.keyLabel == "e";
+            bool isImport = event.logicalKey.keyLabel ==
+                "i" || /* What the heck?! Flutter is buggy here ... */ event
+                    .logicalKey.keyLabel ==
+                "\\";
+            bool isExport = event.logicalKey.keyLabel ==
+                "e" || /* What the heck?! Flutter is buggy here ... */ event
+                    .logicalKey.keyLabel ==
+                "-";
 
-            if (isCTRL && isImport) {
+            if (/*isCTRL && */ isImport) {
               showImportDialog();
-            } else if (isCTRL && isExport) {
+            } else if (/*isCTRL && */ isExport) {
               showExportDialog();
             }
 
@@ -210,241 +218,225 @@ class _OverviewPageState extends State<OverviewPage>
           }
         },
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Expanded(
-                flex: 10,
-                child: Container(
-                  constraints: BoxConstraints(maxWidth: 1000),
-                  padding: const EdgeInsets.symmetric(horizontal: 50.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Expanded(
-                        child: Row(children: <Widget>[
-                          Expanded(
-                            child: Column(children: <Widget>[
-                              Text(tr('cardId'),
-                                  style: TextStyle(fontSize: 40)),
-                              SizedBox(height: 10),
-                              TextFormField(
-                                // enabled: false,
-                                // decoration: InputDecoration(
-                                //   focusedBorder: InputBorder.none,
-                                //   enabledBorder: InputBorder.none,
-                                // ),
-                                focusNode: cardIdFocus,
-                                cursorColor: Colors.transparent,
-                                enableSuggestions: false,
-                                autofocus: true,
-                                autocorrect: false,
-                                autovalidate: true,
-                                decoration: InputDecoration(
-                                  // prefixIcon: Icon(
-                                  //   MaterialCommunityIcons.getIconData(
-                                  //       "account-card-details"),
-                                  //   size: 45,
-                                  // ),
-                                  suffix: _cardIdFieldController.text.isNotEmpty
-                                      ? IconButton(
-                                          iconSize: 35,
-                                          onPressed: () {
-                                            loadDetails(
-                                                _cardIdFieldController.text);
-                                          },
-                                          icon: Icon(Icons.input),
-                                        )
-                                      : null,
-                                ),
-                                validator: (value) {
-                                  refresh(() => _validId = value.isNotEmpty);
-                                  return null;
-                                },
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    fontSize: 45,
-                                    // fontWeight: FontWeight.bold,
-                                    // fontFamily: 'Advanced_Led_Board-7.ttf',
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.brightText),
-                                key: _cardIdFieldKey,
-                                controller: _cardIdFieldController,
-                              ),
-                            ]),
-                          ),
-                          SizedBox(width: 30),
-                          Expanded(
-                            child: Column(children: <Widget>[
-                              Text(tr('balance'),
-                                  style: TextStyle(fontSize: 40)),
-                              SizedBox(height: 10),
-                              TextFormField(
-                                // enabled: false,
-                                // decoration: InputDecoration(
-                                //   focusedBorder: InputBorder.none,
-                                //   enabledBorder: InputBorder.none,
-                                // ),
-                                // focusNode: cardIdFocus,
-                                cursorColor: Colors.transparent,
-                                enableSuggestions: false,
-                                autofocus: true,
-                                autocorrect: false,
-                                autovalidate: true,
-                                decoration: InputDecoration(
-                                    // suffixText:
-                                    //     _balanceFieldController.text.isNotEmpty
-                                    //         ? "Ft"
-                                    //         : null,
-                                    // suffixStyle: TextStyle(
-                                    //     color: AppColors.brightText,
-                                    //     fontSize: 35),
-                                    // prefixIcon: Icon(
-                                    //   Icons.monetization_on,
-                                    //   size: 45,
-                                    // ),
-                                    ),
-                                validator: (value) {
-                                  refresh(() => _validId = value.isNotEmpty);
-                                  return null;
-                                },
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    fontSize: 45,
-                                    fontWeight: FontWeight.bold,
-                                    // fontFamily: 'Arcade',
-                                    color: AppColors.brightText),
-                                controller: _balanceFieldController,
-                              ),
-                            ]),
-                          ),
-                        ]),
-                      ),
-                      Expanded(
-                        child: Column(
-                          children: <Widget>[
-                            Text(tr('amount'), style: TextStyle(fontSize: 40)),
-                            SizedBox(height: 10),
-                            RawKeyboardListener(
-                              focusNode: _propertyFocus,
-                              onKey: (event) {
-                                // if (event.logicalKey.keyId == 54 &&
-                                //     (_propertyFieldKey.currentState.value
-                                //             as String)
-                                //         .isNotEmpty) {
-                                //   validate();
-                                // }
-                              },
-                              child: TextFormField(
-                                cursorColor: Colors.transparent,
-                                focusNode: propertyFocus,
-                                autocorrect: false,
-                                autovalidate: true,
-                                enableSuggestions: false,
-                                decoration: InputDecoration(
-                                  prefixText: "Ft",
-                                  prefixStyle: TextStyle(
-                                      color: AppColors.brightText,
-                                      fontSize: 45),
-                                  suffixIcon: _propertyFieldController
-                                          .text.isNotEmpty
-                                      ? IconButton(
-                                          iconSize: 35,
-                                          onPressed: () {
-                                            Future.delayed(
-                                                    Duration(milliseconds: 50))
-                                                .then((_) {
-                                              setState(() {
-                                                _propertyFieldController
-                                                    .clear();
-                                                FocusScope.of(context)
-                                                    .unfocus();
-                                              });
-                                            });
-                                          },
-                                          icon: Icon(Icons.clear),
-                                        )
-                                      : null,
-                                ),
-                                controller: _propertyFieldController,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 75,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.accent,
-                                  // fontFamily: 'Digit',
-                                ),
-                                key: _propertyFieldKey,
-                                validator: (value) {
-                                  if (value.isNotEmpty) {
-                                    int amount = 0;
-                                    try {
-                                      amount = int.parse(value);
-                                    } catch (e) {
-                                      refresh(() => _validProp = false);
-                                      return tr("notNumber");
-                                    }
-
-                                    if (amount <= 0) {
-                                      refresh(() => _validProp = false);
-                                      return tr("mustBePositive");
-                                    }
-                                  }
-                                  refresh(() {
-                                    _validProp = value.isNotEmpty;
-                                    isButtonsActive = _validProp &&
-                                        _cardIdFieldController.text.isNotEmpty;
-                                  });
-                                  return null;
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Container(
-                height: 150,
-                constraints: BoxConstraints(maxWidth: 800),
-                child: Row(
-                  mainAxisSize: MainAxisSize.max,
-                  children: <Widget>[
-                    createButton(tr('topUp'), onTap: () {
-                      topUp();
-                    }),
-                    createButton(tr('pay'), onTap: () {
-                      pay();
-                    }),
-                  ],
-                ),
-              ),
-              SizedBox(height: 20),
-              Container(
-                decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(radius()),
-                    border: Border.all(
-                      width: 3,
-                      color: AppColors.brightText,
-                    )),
-                constraints: BoxConstraints(maxWidth: 600),
-                child: VirtualKeyboard(
-                    fontSize: 35,
-                    textColor: AppColors.brightText,
-                    height: 250,
-                    type: VirtualKeyboardType.Numeric,
-                    onKeyPress: _onKeyPress),
-              ),
-              SizedBox(height: 40)
-            ],
+          child: Container(
+            constraints: BoxConstraints(maxWidth: 1000),
+            padding: const EdgeInsets.symmetric(horizontal: 50.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                createInputs(),
+                createButtons(),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget createInputs() {
+    return Expanded(
+      child: Column(
+        // mainAxisSize: MainAxisSize.min,
+        // mainAxisAlignment: MainAxisAlignment.start,
+        children: <Widget>[
+          Row(mainAxisSize: MainAxisSize.max, children: <Widget>[
+            Expanded(
+              child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+                AutoSizeText(tr('cardId'),
+                    minFontSize: 25, style: TextStyle(fontSize: 35)),
+                TextFormField(
+                  enabled: false,
+                  decoration: InputDecoration(
+                    disabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                  ),
+                  focusNode: cardIdFocus,
+                  cursorColor: Colors.transparent,
+                  enableSuggestions: false,
+                  autofocus: true,
+                  autocorrect: false,
+                  autovalidate: true,
+                  // decoration: InputDecoration(
+                  //   suffix: _cardIdFieldController.text.isNotEmpty
+                  //       ? IconButton(
+                  //           iconSize: 35,
+                  //           onPressed: () {
+                  //             loadDetails(_cardIdFieldController.text);
+                  //           },
+                  //           icon: Icon(Icons.input),
+                  //         )
+                  //       : null,
+                  // ),
+                  validator: (value) {
+                    refresh(() => _validId = value.isNotEmpty);
+                    return null;
+                  },
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.brightText),
+                  key: _cardIdFieldKey,
+                  controller: _cardIdFieldController,
+                ),
+              ]),
+            ),
+            SizedBox(width: 30),
+            Expanded(
+              child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+                AutoSizeText(tr('balance'),
+                    minFontSize: 25, style: TextStyle(fontSize: 35)),
+                TextFormField(
+                  enabled: false,
+                  decoration: InputDecoration(
+                    disabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                  ),
+                  // focusNode: cardIdFocus,
+                  cursorColor: Colors.transparent,
+                  enableSuggestions: false,
+                  autofocus: true,
+                  autocorrect: false,
+                  autovalidate: true,
+                  validator: (value) {
+                    refresh(() => _validId = value.isNotEmpty);
+                    return null;
+                  },
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.brightText),
+                  controller: _balanceFieldController,
+                ),
+              ]),
+            ),
+          ]),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              Text(tr('amount'), style: TextStyle(fontSize: 40)),
+              RawKeyboardListener(
+                focusNode: _propertyFocus,
+                onKey: (event) {
+                  // if (event.logicalKey.keyId == 54 &&
+                  //     (_propertyFieldKey.currentState.value
+                  //             as String)
+                  //         .isNotEmpty) {
+                  //   validate();
+                  // }
+                },
+                child: TextFormField(
+                  cursorColor: Colors.transparent,
+                  focusNode: propertyFocus,
+                  autocorrect: false,
+                  autovalidate: true,
+                  enableSuggestions: false,
+                  decoration: InputDecoration(
+                    prefixText: "Ft",
+                    prefixStyle:
+                        TextStyle(color: AppColors.brightText, fontSize: 45),
+                    suffixIcon: _propertyFieldController.text.isNotEmpty
+                        ? IconButton(
+                            iconSize: 35,
+                            onPressed: () {
+                              Future.delayed(Duration(milliseconds: 50))
+                                  .then((_) {
+                                setState(() {
+                                  _propertyFieldController.clear();
+                                  FocusScope.of(this.context).unfocus();
+                                });
+                              });
+                            },
+                            icon: Icon(Icons.clear),
+                          )
+                        : null,
+                  ),
+                  controller: _propertyFieldController,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 60,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.accent,
+                    // fontFamily: 'Digit',
+                  ),
+                  key: _propertyFieldKey,
+                  validator: (value) {
+                    if (value.isNotEmpty) {
+                      int amount = 0;
+                      try {
+                        amount = int.parse(value);
+                      } catch (e) {
+                        refresh(() => _validProp = false);
+                        return tr("notNumber");
+                      }
+
+                      if (amount <= 0) {
+                        refresh(() => _validProp = false);
+                        return tr("mustBePositive");
+                      }
+                    }
+                    refresh(() {
+                      _validProp = value.isNotEmpty;
+                      isButtonsActive =
+                          _validProp && _cardIdFieldController.text.isNotEmpty;
+                    });
+                    return null;
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget createButtons() {
+    return Container(
+      constraints: BoxConstraints(minHeight: 400),
+      child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+        SizedBox(height: 10),
+        Container(
+          height: 100,
+          constraints: BoxConstraints(maxWidth: 800),
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            children: <Widget>[
+              createButton(tr('topUp'), onTap: () {
+                topUp();
+              }),
+              createButton(tr('pay'), onTap: () {
+                pay();
+              }),
+            ],
+          ),
+        ),
+        SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(radius()),
+              border: Border.all(
+                width: 3,
+                color: AppColors.brightText,
+              )),
+          constraints: BoxConstraints(maxWidth: 600),
+          child: VirtualKeyboard(
+              fontSize: 45,
+              textColor: AppColors.brightText,
+              height: 250,
+              type: VirtualKeyboardType.Numeric,
+              onKeyPress: _onKeyPress),
+        ),
+        SizedBox(height: 30)
+      ]),
     );
   }
 
@@ -493,7 +485,7 @@ class _OverviewPageState extends State<OverviewPage>
   Widget createButton(String s, {Null Function() onTap}) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
         child: RawMaterialButton(
           onPressed: isButtonsActive ? onTap : null,
           child: Container(
@@ -511,7 +503,7 @@ class _OverviewPageState extends State<OverviewPage>
             child: Center(
               child: AutoSizeText(s,
                   style: TextStyle(
-                    fontSize: 50,
+                    fontSize: 45,
                     color: isButtonsActive
                         ? AppColors.brightText
                         : AppColors.disabledColor,

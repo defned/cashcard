@@ -3,11 +3,13 @@
 // found in the LICENSE file.
 
 #include "win32_window.h"
+#include "window_configuration.h"
 
 #include "resource.h"
 #include "shellscalingapi.h"
 
-namespace {
+namespace
+{
 
 // the Windows DPI system is based on this
 // constant for machines running at 100% scaling.
@@ -17,18 +19,20 @@ constexpr LPCWSTR kClassName = L"CLASSNAME";
 
 // Scale helper to convert logical scaler values to physical using passed in
 // scale factor
-int Scale(int source, double scale_factor) {
+int Scale(int source, double scale_factor)
+{
   return static_cast<int>(source * scale_factor);
 }
 
-}  // namespace
+} // namespace
 
 Win32Window::Win32Window() {}
 
 Win32Window::~Win32Window() { Destroy(); }
 
 bool Win32Window::CreateAndShow(const std::wstring &title, const Point &origin,
-                                const Size &size) {
+                                const Size &size)
+{
   Destroy();
 
   WNDCLASS window_class = RegisterWindowClass();
@@ -46,10 +50,15 @@ bool Win32Window::CreateAndShow(const std::wstring &title, const Point &origin,
       Scale(origin.y, scale_factor), Scale(size.width, scale_factor),
       Scale(size.height, scale_factor), nullptr, nullptr,
       window_class.hInstance, this);
+
+  // maximize window
+  ShowWindow(window, SW_MAXIMIZE);
+
   return window != nullptr;
 }
 
-WNDCLASS Win32Window::RegisterWindowClass() {
+WNDCLASS Win32Window::RegisterWindowClass()
+{
   WNDCLASS window_class{};
   window_class.hCursor = LoadCursor(nullptr, IDC_ARROW);
   window_class.lpszClassName = kClassName;
@@ -68,8 +77,10 @@ WNDCLASS Win32Window::RegisterWindowClass() {
 
 LRESULT CALLBACK Win32Window::WndProc(HWND const window, UINT const message,
                                       WPARAM const wparam,
-                                      LPARAM const lparam) noexcept {
-  if (message == WM_NCCREATE) {
+                                      LPARAM const lparam) noexcept
+{
+  if (message == WM_NCCREATE)
+  {
     auto cs = reinterpret_cast<CREATESTRUCT *>(lparam);
     SetWindowLongPtr(window, GWLP_USERDATA,
                      reinterpret_cast<LONG_PTR>(cs->lpCreateParams));
@@ -77,7 +88,9 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window, UINT const message,
     auto that = static_cast<Win32Window *>(cs->lpCreateParams);
 
     that->window_handle_ = window;
-  } else if (Win32Window *that = GetThisFromHandle(window)) {
+  }
+  else if (Win32Window *that = GetThisFromHandle(window))
+  {
     return that->MessageHandler(window, message, wparam, lparam);
   }
 
@@ -86,58 +99,66 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window, UINT const message,
 
 LRESULT
 Win32Window::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam,
-                            LPARAM const lparam) noexcept {
+                            LPARAM const lparam) noexcept
+{
   auto window =
       reinterpret_cast<Win32Window *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
-  if (window == nullptr) {
+  if (window == nullptr)
+  {
     return 0;
   }
 
-  switch (message) {
-    case WM_DESTROY:
-      window_handle_ = nullptr;
-      Destroy();
-      return 0;
+  switch (message)
+  {
+  case WM_DESTROY:
+    window_handle_ = nullptr;
+    Destroy();
+    return 0;
 
-    case WM_SIZE:
-      RECT rect;
-      GetClientRect(hwnd, &rect);
-      if (child_content_ != nullptr) {
-        // Size and position the child window.
-        MoveWindow(child_content_, rect.left, rect.top, rect.right - rect.left,
-                   rect.bottom - rect.top, TRUE);
-      }
-      return 0;
+  case WM_SIZE:
+    RECT rect;
+    GetClientRect(hwnd, &rect);
+    if (child_content_ != nullptr)
+    {
+      // Size and position the child window.
+      MoveWindow(child_content_, rect.left, rect.top, rect.right - rect.left,
+                 rect.bottom - rect.top, TRUE);
+    }
+    return 0;
 
-    case WM_GETMINMAXINFO:
-      RECT WorkArea; SystemParametersInfo( SPI_GETWORKAREA, 0, &WorkArea, 0 );  
+  case WM_GETMINMAXINFO:
+    RECT WorkArea;
+    SystemParametersInfo(SPI_GETWORKAREA, 0, &WorkArea, 0);
 
-      ((MINMAXINFO *)lparam)->ptMaxSize.x = ( WorkArea.right - WorkArea.left );
-      ((MINMAXINFO *)lparam)->ptMaxSize.y = ( WorkArea.bottom - WorkArea.top );
-      ((MINMAXINFO *)lparam)->ptMaxPosition.x = WorkArea.left;
-      ((MINMAXINFO *)lparam)->ptMaxPosition.y = WorkArea.top;
-      ((MINMAXINFO *)lparam)->ptMinTrackSize.x = ( WorkArea.right - WorkArea.left );
-      ((MINMAXINFO *)lparam)->ptMinTrackSize.y = ( WorkArea.right - WorkArea.left );
-      return 0;
+    // ((MINMAXINFO *)lparam)->ptMaxSize.x = (WorkArea.right - WorkArea.left);
+    // ((MINMAXINFO *)lparam)->ptMaxSize.y = (WorkArea.bottom - WorkArea.top);
+    // ((MINMAXINFO *)lparam)->ptMaxPosition.x = WorkArea.left;
+    // ((MINMAXINFO *)lparam)->ptMaxPosition.y = WorkArea.top;
+    ((MINMAXINFO *)lparam)->ptMinTrackSize.x = kFlutterWindowWidth;
+    ((MINMAXINFO *)lparam)->ptMinTrackSize.y = kFlutterWindowHeight;
+    return 0;
 
-    case WM_ACTIVATE:
-      if (child_content_ != nullptr) {
-        SetFocus(child_content_);
-      }
-      return 0;
+  case WM_ACTIVATE:
+    if (child_content_ != nullptr)
+    {
+      SetFocus(child_content_);
+    }
+    return 0;
 
-    // Messages that are directly forwarded to embedding.
-    case WM_FONTCHANGE:
-      SendMessage(child_content_, WM_FONTCHANGE, NULL, NULL);
-      return 0;
+  // Messages that are directly forwarded to embedding.
+  case WM_FONTCHANGE:
+    SendMessage(child_content_, WM_FONTCHANGE, NULL, NULL);
+    return 0;
   }
 
   return DefWindowProc(window_handle_, message, wparam, lparam);
 }
 
-void Win32Window::Destroy() {
-  if (window_handle_) {
+void Win32Window::Destroy()
+{
+  if (window_handle_)
+  {
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
   }
@@ -145,12 +166,14 @@ void Win32Window::Destroy() {
   UnregisterClass(kClassName, nullptr);
 }
 
-Win32Window *Win32Window::GetThisFromHandle(HWND const window) noexcept {
+Win32Window *Win32Window::GetThisFromHandle(HWND const window) noexcept
+{
   return reinterpret_cast<Win32Window *>(
       GetWindowLongPtr(window, GWLP_USERDATA));
 }
 
-void Win32Window::SetChildContent(HWND content) {
+void Win32Window::SetChildContent(HWND content)
+{
   child_content_ = content;
   auto res = SetParent(content, window_handle_);
   RECT frame;
