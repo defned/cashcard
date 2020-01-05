@@ -71,6 +71,8 @@ class DbRecordDataSource extends DataTableSource {
 
 enum DbExceptions {
   noRows,
+  missingKeyInput,
+  missingValueInput,
   tooManyRows,
   alreadyExist,
   negativeBalance,
@@ -166,12 +168,13 @@ class Db {
   }
 
   Future pay(String id, int amount) {
-    assert(amount != null && amount > 0);
+    if (!(amount != null && amount > 0)) throw DbExceptions.missingValueInput;
     return changeBalance(id, -1 * amount);
   }
 
   Future topUp(String id, int amount) {
-    assert(amount != null && amount > 0);
+    if (!(amount != null && amount > 0)) throw DbExceptions.missingValueInput;
+
     return changeBalance(id, amount);
   }
 
@@ -212,7 +215,9 @@ class Db {
   }
 
   Future changeBalance(String id, int amount) async {
-    assert(id != null && id.isNotEmpty && amount != null);
+    if (!(id != null && id.isNotEmpty && amount != null))
+      throw DbExceptions.missingKeyInput;
+
     try {
       await connect();
       // Query the database using a parameterized query

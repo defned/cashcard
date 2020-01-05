@@ -66,7 +66,7 @@ class _OverviewPageState extends State<OverviewPage>
   pay() async {
     try {
       await app.db.pay(_cardIdFieldController.text,
-          int.parse(_propertyFieldController.text));
+          int.tryParse(_propertyFieldController.text));
       showInfo("${tr('pay')} ${tr('succeeded')}");
       resetFields();
     } catch (e) {
@@ -77,7 +77,7 @@ class _OverviewPageState extends State<OverviewPage>
   topUp() async {
     try {
       await app.db.topUp(_cardIdFieldController.text,
-          int.parse(_propertyFieldController.text));
+          int.tryParse(_propertyFieldController.text));
       showInfo("${tr('topUp')} ${tr('succeeded')}");
       resetFields();
     } catch (e) {
@@ -276,14 +276,15 @@ class _OverviewPageState extends State<OverviewPage>
                 ),
               ]),
             ),
-            IconButton(
-              iconSize: 35,
-              onPressed: () {
-                _cardIdFieldController.text = "12312312";
-                loadDetails(_cardIdFieldController.text);
-              },
-              icon: Icon(Icons.input),
-            ),
+            // NOTE: Only for test purposes
+            // IconButton(
+            //   iconSize: 35,
+            //   onPressed: () {
+            //     _cardIdFieldController.text = "12312312";
+            //     loadDetails(_cardIdFieldController.text);
+            //   },
+            //   icon: Icon(Icons.input),
+            // ),
             SizedBox(width: 30),
             Expanded(
               child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
