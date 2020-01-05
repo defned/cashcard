@@ -38,7 +38,7 @@ String primaryFontFamily = 'Lato';
 String secondaryFontFamily = 'Roboto';
 //////////////////////////////////////////////////////////////////////////
 
-TextTheme white_textTheme() => TextTheme(
+TextTheme whiteTextTheme() => TextTheme(
       // title: TextStyle(
       //   fontWeight: FontWeight.w700,
       //   color: Colors.yellow,
@@ -77,7 +77,7 @@ TextTheme white_textTheme() => TextTheme(
           fontSize: 20),
     );
 
-TextTheme black_textTheme() => TextTheme(
+TextTheme blackTextTheme() => TextTheme(
       // title: TextStyle(
       //   fontWeight: FontWeight.w700,
       //   color: Colors.yellow,
@@ -136,10 +136,7 @@ ThemeData whiteTheme() => ThemeData(
                 fontWeight: FontWeight.w700,
                 fontFamily: primaryFontFamily,
                 color: AppColors.enabledColor))),
-    textTheme: white_textTheme(),
-    // primaryTextTheme: _textTheme,
-    // accentTextTheme: _textTheme,
-
+    textTheme: whiteTextTheme(),
     dialogTheme: DialogTheme(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ),
@@ -205,10 +202,7 @@ ThemeData blackTheme() => ThemeData(
                 fontWeight: FontWeight.w700,
                 fontFamily: primaryFontFamily,
                 color: AppColors.brightText))),
-    textTheme: black_textTheme(),
-    // primaryTextTheme: _textTheme,
-    // accentTextTheme: _textTheme,
-
+    textTheme: blackTextTheme(),
     dialogTheme: DialogTheme(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     ),

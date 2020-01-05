@@ -9,7 +9,6 @@ import 'package:example_flutter/app/style.dart';
 import 'package:example_flutter/main.dart';
 import 'package:example_flutter/util/extensions.dart';
 import 'package:example_flutter/widget/filedialog.dart';
-import 'package:example_flutter/widget/progressdialog.dart';
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -87,6 +86,10 @@ class _OverviewPageState extends State<OverviewPage>
   }
 
   loadDetails(String data) async {
+    if (data.length != 8) {
+      return;
+    }
+
     try {
       DbRecord record = await app.db.get(data);
       resetFields();
@@ -155,7 +158,7 @@ class _OverviewPageState extends State<OverviewPage>
       ..show(this.context);
   }
 
-  bool _validId = false;
+  // bool _validId = false;
   bool _validProp = false;
   double radius() => 10;
   final FocusNode cardIdFocus = FocusNode();
@@ -186,6 +189,7 @@ class _OverviewPageState extends State<OverviewPage>
         ],
       ),
       body: RawKeyboardListener(
+        autofocus: true,
         focusNode: _pageFocus,
         onKey: (event) {
           print(event);
@@ -239,8 +243,6 @@ class _OverviewPageState extends State<OverviewPage>
   Widget createInputs() {
     return Expanded(
       child: Column(
-        // mainAxisSize: MainAxisSize.min,
-        // mainAxisAlignment: MainAxisAlignment.start,
         children: <Widget>[
           Row(mainAxisSize: MainAxisSize.max, children: <Widget>[
             Expanded(
@@ -249,32 +251,21 @@ class _OverviewPageState extends State<OverviewPage>
                     minFontSize: 25, style: TextStyle(fontSize: 35)),
                 TextFormField(
                   enabled: false,
+                  focusNode: cardIdFocus,
+                  cursorColor: Colors.transparent,
+                  enableSuggestions: false,
+                  autocorrect: false,
+                  // autofocus: true,
+                  // autovalidate: true,
                   decoration: InputDecoration(
                     disabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     enabledBorder: InputBorder.none,
                   ),
-                  focusNode: cardIdFocus,
-                  cursorColor: Colors.transparent,
-                  enableSuggestions: false,
-                  autofocus: true,
-                  autocorrect: false,
-                  autovalidate: true,
-                  // decoration: InputDecoration(
-                  //   suffix: _cardIdFieldController.text.isNotEmpty
-                  //       ? IconButton(
-                  //           iconSize: 35,
-                  //           onPressed: () {
-                  //             loadDetails(_cardIdFieldController.text);
-                  //           },
-                  //           icon: Icon(Icons.input),
-                  //         )
-                  //       : null,
-                  // ),
-                  validator: (value) {
-                    refresh(() => _validId = value.isNotEmpty);
-                    return null;
-                  },
+                  // validator: (value) {
+                  //   refresh(() => _validId = value.isNotEmpty);
+                  //   return null;
+                  // },
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 40,
@@ -284,6 +275,14 @@ class _OverviewPageState extends State<OverviewPage>
                   controller: _cardIdFieldController,
                 ),
               ]),
+            ),
+            IconButton(
+              iconSize: 35,
+              onPressed: () {
+                _cardIdFieldController.text = "12312312";
+                loadDetails(_cardIdFieldController.text);
+              },
+              icon: Icon(Icons.input),
             ),
             SizedBox(width: 30),
             Expanded(
@@ -302,11 +301,11 @@ class _OverviewPageState extends State<OverviewPage>
                   enableSuggestions: false,
                   autofocus: true,
                   autocorrect: false,
-                  autovalidate: true,
-                  validator: (value) {
-                    refresh(() => _validId = value.isNotEmpty);
-                    return null;
-                  },
+                  // autovalidate: true,
+                  // validator: (value) {
+                  //   refresh(() => _validId = value.isNotEmpty);
+                  //   return null;
+                  // },
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 40,
@@ -332,63 +331,85 @@ class _OverviewPageState extends State<OverviewPage>
                   //   validate();
                   // }
                 },
-                child: TextFormField(
-                  cursorColor: Colors.transparent,
-                  focusNode: propertyFocus,
-                  autocorrect: false,
-                  autovalidate: true,
-                  enableSuggestions: false,
-                  decoration: InputDecoration(
-                    prefixText: "Ft",
-                    prefixStyle:
-                        TextStyle(color: AppColors.brightText, fontSize: 45),
-                    suffixIcon: _propertyFieldController.text.isNotEmpty
-                        ? IconButton(
+                child: Stack(
+                  children: <Widget>[
+                    TextFormField(
+                      enabled: false,
+                      cursorColor: Colors.transparent,
+                      focusNode: propertyFocus,
+                      autocorrect: false,
+                      autovalidate: true,
+                      enableSuggestions: false,
+                      decoration: InputDecoration(
+                        disabledBorder: UnderlineInputBorder(
+                            borderSide:
+                                BorderSide(color: AppColors.brightText)),
+                      ),
+                      controller: _propertyFieldController,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 60,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.accent,
+                      ),
+                      key: _propertyFieldKey,
+                      validator: (value) {
+                        if (value.isNotEmpty) {
+                          int amount = 0;
+                          try {
+                            amount = int.parse(value);
+                          } catch (e) {
+                            refresh(() => _validProp = false);
+                            return tr("notNumber");
+                          }
+
+                          if (amount <= 0) {
+                            refresh(() => _validProp = false);
+                            return tr("mustBePositive");
+                          }
+                        }
+                        refresh(() {
+                          _validProp = value.isNotEmpty;
+                          isButtonsActive = _validProp &&
+                              _cardIdFieldController.text.isNotEmpty;
+                        });
+                        return null;
+                      },
+                    ),
+                    if (_propertyFieldController.text.isNotEmpty)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Text(
+                            "Ft",
+                            style: TextStyle(
+                                color: AppColors.brightText, fontSize: 45),
+                          ),
+                        ),
+                      ),
+                    if (_propertyFieldController.text.isNotEmpty)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: IconButton(
                             iconSize: 35,
                             onPressed: () {
                               Future.delayed(Duration(milliseconds: 50))
                                   .then((_) {
                                 setState(() {
                                   _propertyFieldController.clear();
-                                  FocusScope.of(this.context).unfocus();
                                 });
                               });
                             },
                             icon: Icon(Icons.clear),
-                          )
-                        : null,
-                  ),
-                  controller: _propertyFieldController,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 60,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.accent,
-                    // fontFamily: 'Digit',
-                  ),
-                  key: _propertyFieldKey,
-                  validator: (value) {
-                    if (value.isNotEmpty) {
-                      int amount = 0;
-                      try {
-                        amount = int.parse(value);
-                      } catch (e) {
-                        refresh(() => _validProp = false);
-                        return tr("notNumber");
-                      }
-
-                      if (amount <= 0) {
-                        refresh(() => _validProp = false);
-                        return tr("mustBePositive");
-                      }
-                    }
-                    refresh(() {
-                      _validProp = value.isNotEmpty;
-                      isButtonsActive =
-                          _validProp && _cardIdFieldController.text.isNotEmpty;
-                    });
-                    return null;
-                  },
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
@@ -444,12 +465,12 @@ class _OverviewPageState extends State<OverviewPage>
   _onKeyPress(VirtualKeyboardKey key) {
     TextEditingController ctrl;
 
-    if (cardIdFocus.hasFocus) {
-      ctrl = _cardIdFieldController;
-    } else if (propertyFocus.hasFocus) {
-      ctrl = _propertyFieldController;
-    } else
-      return;
+    // if (cardIdFocus.hasFocus) {
+    //   ctrl = _cardIdFieldController;
+    // } else if (propertyFocus.hasFocus) {
+    ctrl = _propertyFieldController;
+    // } else
+    //   return;
 
     if (key.keyType == VirtualKeyboardKeyType.String) {
       ctrl.text = ctrl.text + (shiftEnabled ? key.capsText : key.text);
@@ -611,7 +632,6 @@ class _OverviewPageState extends State<OverviewPage>
     );
   }
 
-  final importKey = GlobalKey<ProgressDialogState>();
   showImportDialog() {
     showDialog<void>(
       barrierDismissible: false,
