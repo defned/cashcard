@@ -8,7 +8,7 @@ android/
 windows/
 build/
 ios/
-mac/
+macos/
 packages
 .flutter-plugins
 # Since the current expectation is that clients are using Flutter head,
