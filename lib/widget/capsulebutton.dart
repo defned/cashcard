@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 class BottomCapsuleButton extends StatelessWidget {
   final Color color;
-  final Function onTap;
+  final Function()? onTap;
   final String text;
-  const BottomCapsuleButton({Key key, this.color, this.onTap, this.text})
-      : super(key: key);
+  const BottomCapsuleButton(
+      {super.key, required this.color, this.onTap, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -24,17 +24,18 @@ class BottomCapsuleButton extends StatelessWidget {
 
 class CapsuleButton extends StatelessWidget {
   final Color color;
-  final Function onTap;
+  final Function()? onTap;
   final Widget child;
   final double borderRadiusSize;
   final double horizontalPadding;
   final double height;
 
-  CapsuleButton(
-      {this.color,
-      this.onTap,
-      this.child,
+  const CapsuleButton(
+      {super.key,
+      required this.color,
+      required this.child,
       this.horizontalPadding = 20,
+      this.onTap,
       this.height = 50,
       this.borderRadiusSize = 40});
 

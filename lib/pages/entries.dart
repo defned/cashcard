@@ -1,11 +1,11 @@
 // import 'dart:io';
 
-// import 'package:example_flutter/app/app.dart';
-// import 'package:example_flutter/db/db.dart';
-// import 'package:example_flutter/widget/filedialog.dart';
-// import 'package:example_flutter/widget/progressdialog.dart';
-// import 'package:example_flutter/widget/subpage.dart';
-// import 'package:example_flutter/util/extensions.dart';
+// import 'package:cashcard/app/app.dart';
+// import 'package:cashcard/db/db.dart';
+// import 'package:cashcard/widget/filedialog.dart';
+// import 'package:cashcard/widget/progressdialog.dart';
+// import 'package:cashcard/widget/subpage.dart';
+// import 'package:cashcard/util/extensions.dart';
 // import 'package:flutter/foundation.dart';
 // import 'package:flutter/material.dart';
 // import 'package:flutter_icons/flutter_icons.dart';

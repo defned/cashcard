@@ -1,26 +1,21 @@
 import 'dart:async';
 
-import 'package:example_flutter/app/app_config.dart';
-import 'package:example_flutter/app/app_localizations.dart';
-import 'package:example_flutter/app/routes.dart';
-import 'package:example_flutter/app/style.dart';
-import 'package:example_flutter/db/db.dart';
-import 'package:example_flutter/util/snackbarmessage.dart';
-import 'package:example_flutter/widget/capsulebutton.dart';
-import 'package:fluro/fluro.dart';
+import 'package:cashcard/app/app_config.dart';
+import 'package:cashcard/app/app_localizations.dart';
+import 'package:cashcard/app/style.dart';
+import 'package:cashcard/db/db.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:logging/logging.dart';
 
 class Application extends WidgetsBindingObserver {
-  StreamController<SnackBarMessage> messageController =
-      StreamController<SnackBarMessage>();
-  Stream<SnackBarMessage> syncMessages;
-  final Router router = Router();
-  Db db;
+  // StreamController<SnackBarMessage> messageController =
+  //     StreamController<SnackBarMessage>();
+  // late Stream<SnackBarMessage> syncMessages;
+  // final Router router = Router();
+  late Db db;
 
   Application() {
-    syncMessages = messageController.stream;
+    // syncMessages = messageController.stream;
 
     AppConfig.init();
 
@@ -42,9 +37,11 @@ class Application extends WidgetsBindingObserver {
   }
 }
 
-Application app;
+late Application app;
 
 class AppComponent extends StatefulWidget {
+  const AppComponent({super.key});
+
   @override
   State createState() {
     return AppComponentState();
@@ -52,55 +49,53 @@ class AppComponent extends StatefulWidget {
 }
 
 class AppComponentState extends State<AppComponent> {
-  StreamSubscription _sub;
-  StreamSubscription _messageSubscription;
+  late StreamSubscription _sub;
+  late StreamSubscription _messageSubscription;
   final _messageScaffoldKey = GlobalKey<ScaffoldState>();
 
   AppComponentState() {
-    Routes.configureRoutes(app.router);
+    // Routes.configureRoutes(app.router);
   }
 
   @override
   initState() {
     super.initState();
     app.init();
-    _messageSubscription = app.syncMessages.listen((message) {
-      if (message is SnackBarMessage) {
-        _messageScaffoldKey.currentState.showSnackBar(SnackBar(
-          content: Row(
-            children: <Widget>[
-              Expanded(
-                  child: Text(message.message,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.w700))),
-              if (message.action != null)
-                CapsuleButton(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text(
-                      message.actionMessage,
-                      style: TextStyle(
-                          color: message.type == SnackBarType.error
-                              ? Colors.red.withOpacity(0.95)
-                              : Colors.black.withOpacity(0.8),
-                          fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                  color: Colors.white,
-                  onTap: () {
-                    _messageScaffoldKey.currentState.hideCurrentSnackBar();
-                    message.action();
-                  },
-                )
-            ],
-          ),
-          backgroundColor: message.type == SnackBarType.error
-              ? Colors.red.withOpacity(0.95)
-              : Colors.black.withOpacity(0.8),
-          duration: message.duration,
-        ));
-      }
-    });
+    // _messageSubscription = app.syncMessages.listen((message) {
+    //   _messageScaffoldKey.currentState.showSnackBar(SnackBar(
+    //     content: Row(
+    //       children: <Widget>[
+    //         Expanded(
+    //             child: Text(message.message,
+    //                 textAlign: TextAlign.center,
+    //                 style: TextStyle(fontWeight: FontWeight.w700))),
+    //         if (message.action != null)
+    //           CapsuleButton(
+    //             child: Padding(
+    //               padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    //               child: Text(
+    //                 message.actionMessage,
+    //                 style: TextStyle(
+    //                     color: message.type == SnackBarType.error
+    //                         ? Colors.red.withOpacity(0.95)
+    //                         : Colors.black.withOpacity(0.8),
+    //                     fontWeight: FontWeight.w800),
+    //               ),
+    //             ),
+    //             color: Colors.white,
+    //             onTap: () {
+    //               _messageScaffoldKey.currentState.hideCurrentSnackBar();
+    //               message.action();
+    //             },
+    //           )
+    //       ],
+    //     ),
+    //     backgroundColor: message.type == SnackBarType.error
+    //         ? Colors.red.withOpacity(0.95)
+    //         : Colors.black.withOpacity(0.8),
+    //     duration: message.duration,
+    //   ));
+    // });
   }
 
   @override
@@ -120,22 +115,23 @@ class AppComponentState extends State<AppComponent> {
           body: child,
         );
       },
-      navigatorObservers: [AppNavigatorObserver()],
+      // navigatorObservers: [AppNavigatorObserver()],
       onGenerateTitle: (BuildContext context) =>
           AppLocalization.of(context).translate('title'),
       localeListResolutionCallback: (locales, supportedLocales) {
-        locales.forEach((l) => print(l.languageCode));
+        locales!.forEach((l) => print(l.languageCode));
         for (var locale in locales) {
           for (var supportedLocale in supportedLocales) {
             if (supportedLocale.languageCode == locale.languageCode &&
-                supportedLocale.countryCode == locale.countryCode)
+                supportedLocale.countryCode == locale.countryCode) {
               return supportedLocale;
+            }
           }
         }
 
         return supportedLocales.first;
       },
-      localizationsDelegates: [
+      localizationsDelegates: const [
         AppLocalization.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -143,39 +139,39 @@ class AppComponentState extends State<AppComponent> {
       ],
       locale: Locale(AppConfig.language.toString().toLowerCase(),
           AppConfig.language.toString().toUpperCase()),
-      supportedLocales: [
+      supportedLocales: const [
         //second param is country code
         Locale('en', 'US'),
         Locale('hu', 'HU'),
       ],
       debugShowCheckedModeBanner: false,
-      theme: blackTheme(),
-      onGenerateRoute: app.router.generator,
-      initialRoute: Routes.overviewPage,
+      // theme: blackTheme(),
+      // onGenerateRoute: app.router.generator,
+      // initialRoute: Routes.overviewPage,
     );
   }
 }
 
-class AppNavigatorObserver extends NavigatorObserver {
-  static final Logger _logger = Logger("app.AppNavigatorObserver");
+// class AppNavigatorObserver extends NavigatorObserver {
+//   static final Logger _logger = Logger("app.AppNavigatorObserver");
 
-  void didPush(Route<dynamic> route, Route<dynamic> previousRoute) {
-    _logger.fine(
-        "Route pushed: ${previousRoute?.settings?.name} -> ${route?.settings?.name}");
-  }
+//   void didPush(Route<dynamic> route, Route<dynamic> previousRoute) {
+//     _logger.fine(
+//         "Route pushed: ${previousRoute?.settings?.name} -> ${route?.settings?.name}");
+//   }
 
-  void didPop(Route<dynamic> route, Route<dynamic> previousRoute) {
-    _logger.fine(
-        "Route popped: ${previousRoute?.settings?.name} -> ${route?.settings?.name}");
-  }
+//   void didPop(Route<dynamic> route, Route<dynamic> previousRoute) {
+//     _logger.fine(
+//         "Route popped: ${previousRoute?.settings?.name} -> ${route?.settings?.name}");
+//   }
 
-  void didRemove(Route<dynamic> route, Route<dynamic> previousRoute) {
-    _logger.fine(
-        "Route removed: ${previousRoute?.settings?.name} -> ${route?.settings?.name}");
-  }
+//   void didRemove(Route<dynamic> route, Route<dynamic> previousRoute) {
+//     _logger.fine(
+//         "Route removed: ${previousRoute?.settings?.name} -> ${route?.settings?.name}");
+//   }
 
-  void didReplace({Route<dynamic> newRoute, Route<dynamic> oldRoute}) {
-    _logger.fine(
-        "Route replaced: ${oldRoute?.settings?.name} -> ${newRoute?.settings?.name}");
-  }
-}
+//   void didReplace({Route<dynamic> newRoute, Route<dynamic> oldRoute}) {
+//     _logger.fine(
+//         "Route replaced: ${oldRoute?.settings?.name} -> ${newRoute?.settings?.name}");
+//   }
+// }

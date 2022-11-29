@@ -1,30 +1,31 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:example_flutter/db/db.dart';
+import 'package:another_flushbar/flushbar.dart';
+import 'package:cashcard/db/db.dart';
 import 'package:path/path.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:example_flutter/app/app.dart';
-import 'package:example_flutter/app/style.dart';
-import 'package:example_flutter/main.dart';
-import 'package:example_flutter/util/extensions.dart';
-import 'package:example_flutter/widget/filedialog.dart';
-import 'package:flushbar/flushbar.dart';
+import 'package:cashcard/app/app.dart';
+import 'package:cashcard/app/style.dart';
+import 'package:cashcard/main.dart';
+import 'package:cashcard/util/extensions.dart';
+import 'package:cashcard/widget/filedialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:virtual_keyboard/virtual_keyboard.dart';
+import 'package:virtual_keyboard_2/virtual_keyboard_2.dart';
 
 class OverviewPage extends StatefulWidget {
   /// Constructor
-  const OverviewPage({Key key}) : super(key: key);
+  const OverviewPage({super.key});
 
   @override
 
   /// State creator
-  _OverviewPageState createState() => _OverviewPageState();
+  OverviewPageState createState() => OverviewPageState();
 }
 
-class _OverviewPageState extends State<OverviewPage>
+class OverviewPageState extends State<OverviewPage>
     with StateWithLocalization<OverviewPage> {
   AutoSizeGroup group = AutoSizeGroup();
 
@@ -36,7 +37,7 @@ class _OverviewPageState extends State<OverviewPage>
   final GlobalKey<FormFieldState> _propertyFieldKey =
       GlobalKey<FormFieldState>();
 
-  StreamSubscription<String> _subscription;
+  late StreamSubscription<Uint8List> _subscription;
 
   // Holds the text that user typed.
   String text = '';
@@ -53,7 +54,7 @@ class _OverviewPageState extends State<OverviewPage>
   void initState() {
     super.initState();
     _subscription = serialPort.stream.listen((onData) {
-      loadDetails(onData);
+      loadDetails(utf8.decode(onData));
     });
   }
 
@@ -66,7 +67,7 @@ class _OverviewPageState extends State<OverviewPage>
   pay() async {
     try {
       await app.db.pay(_cardIdFieldController.text,
-          int.tryParse(_propertyFieldController.text));
+          int.parse(_propertyFieldController.text));
       showInfo("${tr('pay')} ${tr('succeeded')}");
       resetFields();
     } catch (e) {
@@ -77,7 +78,7 @@ class _OverviewPageState extends State<OverviewPage>
   topUp() async {
     try {
       await app.db.topUp(_cardIdFieldController.text,
-          int.tryParse(_propertyFieldController.text));
+          int.parse(_propertyFieldController.text));
       showInfo("${tr('topUp')} ${tr('succeeded')}");
       resetFields();
     } catch (e) {
@@ -128,7 +129,7 @@ class _OverviewPageState extends State<OverviewPage>
         flushbarPosition: FlushbarPosition.TOP,
         margin: EdgeInsets.only(
             left: MediaQuery.of(this.context).size.width - 500 - 30, top: 15),
-        borderRadius: 8,
+        borderRadius: BorderRadius.all(Radius.circular(8)),
         maxWidth: 500,
         duration: Duration(milliseconds: 1500),
         backgroundColor: AppColors.ok,
@@ -146,7 +147,7 @@ class _OverviewPageState extends State<OverviewPage>
         flushbarPosition: FlushbarPosition.TOP,
         margin: EdgeInsets.only(
             left: MediaQuery.of(this.context).size.width - 500 - 30, top: 15),
-        borderRadius: 8,
+        borderRadius: BorderRadius.all(Radius.circular(8)),
         maxWidth: 500,
         duration: Duration(milliseconds: 2000),
         backgroundColor: AppColors.error,
@@ -167,7 +168,7 @@ class _OverviewPageState extends State<OverviewPage>
   final FocusNode _pageFocus = FocusNode();
   final FocusNode _propertyFocus = FocusNode();
 
-  void refresh(Function f) {
+  void refresh(Function() f) {
     Future.delayed(Duration(milliseconds: 100), () {
       if (mounted) setState(f);
     });
@@ -339,7 +340,7 @@ class _OverviewPageState extends State<OverviewPage>
                       cursorColor: Colors.transparent,
                       focusNode: propertyFocus,
                       autocorrect: false,
-                      autovalidate: true,
+                      // autovalidate: true,
                       enableSuggestions: false,
                       decoration: InputDecoration(
                         disabledBorder: UnderlineInputBorder(
@@ -355,7 +356,7 @@ class _OverviewPageState extends State<OverviewPage>
                       ),
                       key: _propertyFieldKey,
                       validator: (value) {
-                        if (value.isNotEmpty) {
+                        if (value != null) {
                           int amount = 0;
                           try {
                             amount = int.parse(value);
@@ -370,7 +371,7 @@ class _OverviewPageState extends State<OverviewPage>
                           }
                         }
                         refresh(() {
-                          _validProp = value.isNotEmpty;
+                          _validProp = true;
                           isButtonsActive = _validProp &&
                               _cardIdFieldController.text.isNotEmpty;
                         });
@@ -451,11 +452,13 @@ class _OverviewPageState extends State<OverviewPage>
               )),
           constraints: BoxConstraints(maxWidth: 600),
           child: VirtualKeyboard(
-              fontSize: 45,
-              textColor: AppColors.brightText,
-              height: 250,
-              type: VirtualKeyboardType.Numeric,
-              onKeyPress: _onKeyPress),
+            fontSize: 45,
+            textColor: AppColors.brightText,
+            height: 250,
+            type: VirtualKeyboardType.Numeric,
+            // onKeyPress: _onKeyPress,
+            textController: _propertyFieldController,
+          ),
         ),
         SizedBox(height: 30)
       ]),
@@ -474,7 +477,8 @@ class _OverviewPageState extends State<OverviewPage>
     //   return;
 
     if (key.keyType == VirtualKeyboardKeyType.String) {
-      ctrl.text = ctrl.text + (shiftEnabled ? key.capsText : key.text);
+      ctrl.text =
+          ctrl.text + ((shiftEnabled == true ? key.capsText : key.text) ?? "");
     } else if (key.keyType == VirtualKeyboardKeyType.Action) {
       switch (key.action) {
         case VirtualKeyboardKeyAction.Backspace:
@@ -488,7 +492,7 @@ class _OverviewPageState extends State<OverviewPage>
           // text = text + '\n';
           break;
         case VirtualKeyboardKeyAction.Space:
-          ctrl.text = ctrl.text + key.text;
+          ctrl.text = ctrl.text + (key.text ?? "");
           // text = text + key.text;
           break;
         case VirtualKeyboardKeyAction.Shift:
@@ -504,7 +508,7 @@ class _OverviewPageState extends State<OverviewPage>
   }
 
   bool isButtonsActive = true;
-  Widget createButton(String s, {Null Function() onTap}) {
+  Widget createButton(String s, {Null Function()? onTap}) {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
@@ -732,19 +736,18 @@ class _OverviewPageState extends State<OverviewPage>
         continue;
       }
 
-      if (splitted[columnIds['ID']].isEmpty) {
+      if (splitted[columnIds['ID']!].isEmpty) {
         print("Skipped record due to missing or empty property '${[
-          splitted[columnIds['ID']]
+          splitted[columnIds['ID']!]
         ]}'");
         continue;
       }
 
-      res.add(DbRecord(
-        splitted[columnIds['ID']],
-        columnIds['BALANCE'] == -1
-            ? null
-            : int.tryParse(splitted[columnIds['BALANCE']]),
-      ));
+      if ((columnIds['BALANCE']!) != -1)
+        res.add(DbRecord(
+          splitted[columnIds['ID']!],
+          int.parse(splitted[columnIds['BALANCE']!]),
+        ));
     }
 
     return res;

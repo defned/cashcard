@@ -4,15 +4,14 @@ import 'package:flutter_icons/flutter_icons.dart';
 class ModalDialog extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
-  final List<Widget> actions;
-  final Widget content;
+  final List<Widget>? actions;
+  final Widget? content;
   const ModalDialog(
-      {this.icon,
-      this.iconColor = Colors.black,
+      {super.key,
+      required this.icon,
       this.content,
-      this.actions,
-      Key key})
-      : super(key: key);
+      this.iconColor = Colors.black,
+      this.actions});
 
   @override
   Widget build(BuildContext context) {
@@ -33,20 +32,18 @@ class ModalDialog extends StatelessWidget {
 }
 
 class WarningDialog extends ModalDialog {
-  WarningDialog({List<Widget> actions, Widget content, Key key})
+  WarningDialog({super.key, List<Widget>? actions, Widget? content})
       : super(
-            icon: MaterialIcons.getIconData('warning'),
+            icon: MaterialIcons.warning,
             iconColor: Colors.red.shade600,
             content: content,
-            actions: actions,
-            key: key);
+            actions: actions);
 }
 
 class QuestionDialog extends ModalDialog {
-  QuestionDialog({List<Widget> actions, Widget content, Key key})
+  QuestionDialog({super.key, List<Widget>? actions, Widget? content})
       : super(
-            icon: MaterialIcons.getIconData('question'),
+            icon: MaterialIcons.question_answer,
             content: content,
-            actions: actions,
-            key: key);
+            actions: actions);
 }

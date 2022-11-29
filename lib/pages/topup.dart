@@ -1,9 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
-import 'package:example_flutter/app/app.dart';
-import 'package:example_flutter/main.dart';
-import 'package:example_flutter/widget/subpage.dart';
-import 'package:example_flutter/util/extensions.dart';
+import 'package:cashcard/app/app.dart';
+import 'package:cashcard/main.dart';
+import 'package:cashcard/widget/subpage.dart';
+import 'package:cashcard/util/extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
@@ -11,7 +12,7 @@ import 'package:flutter_icons/flutter_icons.dart';
 /// Regsitration page
 class TopUpPage extends StatefulWidget {
   /// Const constructor
-  const TopUpPage({Key key}) : super(key: key);
+  const TopUpPage({super.key});
 
   @override
   _TopUpPageState createState() => _TopUpPageState();
@@ -23,13 +24,13 @@ class _TopUpPageState extends State<TopUpPage>
   final GlobalKey<FormFieldState> _cardIdFieldKey = GlobalKey<FormFieldState>();
   final GlobalKey<FormFieldState> _propertyFieldKey =
       GlobalKey<FormFieldState>();
-  StreamSubscription<String> _subscription;
+  late StreamSubscription<Uint8List> _subscription;
 
   @override
   void initState() {
     super.initState();
     _subscription = serialPort.stream.listen((onData) {
-      _cardIdFieldController.text = onData;
+      _cardIdFieldController.text = utf8.decode(onData);
       propertyFocus.requestFocus();
     });
   }
@@ -49,9 +50,9 @@ class _TopUpPageState extends State<TopUpPage>
     try {
       isBusy = true;
       await app.db.topUp(_cardIdFieldController.value.text,
-          int.parse(_propertyFieldKey.currentState.value));
+          int.parse(_propertyFieldKey.currentState!.value));
       _cardIdFieldController.text = "";
-      _propertyFieldKey.currentState.reset();
+      _propertyFieldKey.currentState!.reset();
       cardIdFocus.requestFocus();
 
       await showDialog<void>(
@@ -98,7 +99,7 @@ class _TopUpPageState extends State<TopUpPage>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  MaterialIcons.getIconData('warning'),
+                  MaterialIcons.warning,
                   size: 40,
                   color: Colors.red.shade600,
                 ),
@@ -137,7 +138,7 @@ class _TopUpPageState extends State<TopUpPage>
   final FocusNode propertyFocus = FocusNode();
   final FocusNode _propertyFocus = FocusNode();
 
-  void refresh(Function f) {
+  void refresh(Function() f) {
     Future.delayed(Duration(milliseconds: 100), () {
       if (mounted) setState(f);
     });
@@ -170,7 +171,7 @@ class _TopUpPageState extends State<TopUpPage>
                           focusNode: cardIdFocus,
                           autofocus: true,
                           autocorrect: false,
-                          autovalidate: true,
+                          // autovalidate: true,
                           validator: (value) {
                             // if (value.isNotEmpty) {
                             //   // Completer<String> c = Completer();
@@ -187,7 +188,7 @@ class _TopUpPageState extends State<TopUpPage>
                             //     return "Amount must be positive";
                             //   }
                             // }
-                            refresh(() => _validId = value.isNotEmpty);
+                            refresh(() => _validId = value != null);
                             return null;
                           },
                           textAlign: TextAlign.center,
@@ -203,7 +204,7 @@ class _TopUpPageState extends State<TopUpPage>
                         focusNode: _propertyFocus,
                         onKey: (event) {
                           if (event.logicalKey.keyId == 54 &&
-                              (_propertyFieldKey.currentState.value as String)
+                              (_propertyFieldKey.currentState!.value as String)
                                   .isNotEmpty) {
                             validate();
                           }
@@ -211,13 +212,13 @@ class _TopUpPageState extends State<TopUpPage>
                         child: TextFormField(
                           focusNode: propertyFocus,
                           autocorrect: false,
-                          autovalidate: true,
+                          // autovalidate: true,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               fontSize: 40, fontWeight: FontWeight.bold),
                           key: _propertyFieldKey,
                           validator: (value) {
-                            if (value.isNotEmpty) {
+                            if (value != null) {
                               int amount = 0;
                               try {
                                 amount = int.parse(value);
@@ -231,7 +232,7 @@ class _TopUpPageState extends State<TopUpPage>
                                 return "Amount must be positive";
                               }
                             }
-                            refresh(() => _validProp = value.isNotEmpty);
+                            refresh(() => _validProp = value != null);
                             return null;
                           },
                         ),

@@ -1,14 +1,14 @@
-name: example_flutter
-description: An example project for flutter-desktop-embedding.
+name: cashcard
+description: An internal card based payment solution for kiosks.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 0.1.0
+# Flutter 3.3.9
+# In Windows, build-name is used as the major, minor, and patch parts
+# of the product and file versions while build-number is used as the build suffix.
+version: 0.0.4+1
 
 environment:
-  sdk: '>=2.6.0-dev.6.0 <3.0.0'
-  # The example interacts with build scripts on the Flutter side that are not
-  # yet stable, so it requires a very recent version of Flutter.
-  # This version will increase regularly as the build scripts change.
-  flutter: '>=1.10.2-pre.54'
+  sdk: '>=2.18.5 <3.0.0'
 
 dependencies:
   flutter:
@@ -16,31 +16,36 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  flutter_icons: 0.3.1
-  mysql1: 0.17.0+1
-  path: ^1.6.4
-  flushbar: 1.9.1
-  virtual_keyboard: 0.1.4
-  ffi_libserialport:
-    git:
-      url: https://github.com/defned/ffi_libserialport.git
-      ref: 40c358b09bca080f6d69d0f7bc50e242b7f1192d
-    # path: ../ffi_libserialport
+  flutter_icons: ^1.1.0
+  mysql1: ^0.20.0
+  path: ^1.8.2
+  # flushbar: 1.9.1
+  another_flushbar: ^1.12.29
+  # virtual_keyboard: 0.1.4
+  virtual_keyboard_2: ^0.0.2
+  # libserialport: ^0.3.0+1
+  flutter_libserialport: ^0.3.0
+  # ffi_libserialport:
+  #   git:
+  #     url: https://github.com/defned/ffi_libserialport.git
+  #     ref: 40c358b09bca080f6d69d0f7bc50e242b7f1192d
+  #   # path: ../ffi_libserialport
   auto_size_text: any
   fluro: any
   logging: any
-  cupertino_icons: ^0.1.0
+  cupertino_icons: ^1.0.2
 
 dev_dependencies:
-  # flutter_test:
-  #   sdk: flutter
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
 
 flutter:
   uses-material-design: true
 
   assets:
-    - blobs/libserialport_c-mac64.so
-    - blobs/libserialport_c-win64.dll
+    # - blobs/libserialport_c-mac64.so
+    # - blobs/libserialport_c-win64.dll
     - lang/hu.json
     - lang/en.json
 

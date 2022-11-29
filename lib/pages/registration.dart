@@ -1,9 +1,9 @@
 // import 'dart:async';
 
-// import 'package:example_flutter/app/app.dart';
-// import 'package:example_flutter/main.dart';
-// import 'package:example_flutter/widget/subpage.dart';
-// import 'package:example_flutter/util/extensions.dart';
+// import 'package:cashcard/app/app.dart';
+// import 'package:cashcard/main.dart';
+// import 'package:cashcard/widget/subpage.dart';
+// import 'package:cashcard/util/extensions.dart';
 // import 'package:flutter/foundation.dart';
 // import 'package:flutter/material.dart';
 // import 'package:flutter_icons/flutter_icons.dart';

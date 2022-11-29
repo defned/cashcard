@@ -1,13 +1,13 @@
-import 'package:example_flutter/util/extensions.dart';
+import 'package:cashcard/util/extensions.dart';
 import 'package:flutter/material.dart';
 
 class SubPage extends StatefulWidget {
   final String title;
-  final Widget child;
-  final Function onPop;
-  final List<Widget> actions;
-  SubPage({Key key, this.title, this.child, this.onPop, this.actions})
-      : super(key: key);
+  final Widget? child;
+  final Function()? onPop;
+  final List<Widget>? actions;
+  SubPage(
+      {super.key, required this.title, this.child, this.onPop, this.actions});
 
   @override
   _SubPageState createState() => _SubPageState();
@@ -26,7 +26,7 @@ class _SubPageState extends State<SubPage> with StateWithLocalization<SubPage> {
           tooltip: tr('back'),
           icon: Icon(Icons.arrow_back_ios),
           onPressed: () {
-            if (widget.onPop != null) widget.onPop();
+            widget.onPop?.call();
             Navigator.of(context).pop();
           },
         ),

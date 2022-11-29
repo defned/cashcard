@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:example_flutter/util/extensions.dart';
+import 'package:cashcard/util/extensions.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -16,12 +16,14 @@ class FileDialogItem {
 }
 
 class FileDialog extends StatefulWidget {
-  final Function(FileSystemEntity) onOpen;
+  final Function(FileSystemEntity)? onOpen;
   final FileDialogTarget target;
   final String title;
-  FileDialog({Key key, this.onOpen, this.title, FileDialogTarget target})
-      : target = (target == null) ? FileDialogTarget.FILE : target,
-        super(key: key);
+  FileDialog(
+      {super.key,
+      required this.title,
+      this.onOpen,
+      this.target = FileDialogTarget.FILE});
   @override
   _FileDialogState createState() => _FileDialogState();
 }
@@ -29,12 +31,12 @@ class FileDialog extends StatefulWidget {
 class _FileDialogState extends State<FileDialog>
     with StateWithLocalization<FileDialog> {
   List<Widget> _widgets = [];
-  FileSystemEntity _lastSelected;
+  FileSystemEntity? _lastSelected;
 
   void _action(FileSystemEntity fsEntity) {
     _deselectOthers(fsEntity);
 
-    State state = keys[fsEntity].currentState;
+    State state = keys[fsEntity]!.currentState!;
     if (fsEntity is Directory) {
       if (state is _FileDialogUpRowState) {
         stepInto(fsEntity.parent.path);
@@ -54,7 +56,7 @@ class _FileDialogState extends State<FileDialog>
   void _deselectOthers(FileSystemEntity fsEntity) {
     keys.forEach((fs, key) {
       if (fs != fsEntity) {
-        State state = keys[fs].currentState;
+        State state = keys[fs]!.currentState!;
         if (state is _FileDialogUpRowState) {
           state.deselect();
         } else if (state is _FileDialogRowState) {
@@ -64,7 +66,7 @@ class _FileDialogState extends State<FileDialog>
     });
   }
 
-  Directory _lastDirectory = Directory.current;
+  Directory? _lastDirectory = Directory.current;
 
   void stepInto(String path) {
     Directory curDir = Directory(Directory(path).absolute.path);
@@ -110,21 +112,17 @@ class _FileDialogState extends State<FileDialog>
   Map<FileSystemEntity, GlobalKey> keys = {};
   GlobalKey _getNewKey<T extends State>(FileSystemEntity fsEntity) {
     keys[fsEntity] = GlobalKey<T>();
-    return keys[fsEntity];
+    return keys[fsEntity]!;
   }
 
   void _onPressed() {
     if (widget.target == FileDialogTarget.DIRECTORY && _lastDirectory != null) {
-      print("Open '${_lastDirectory.path}' directory");
-      if (widget.onOpen != null) {
-        widget.onOpen(_lastDirectory);
-      }
+      print("Open '${_lastDirectory!.path}' directory");
+      widget.onOpen?.call(_lastDirectory!);
     } else if (widget.target == FileDialogTarget.FILE &&
         _lastSelected != null) {
-      print("Open '${_lastSelected.path}' file");
-      if (widget.onOpen != null) {
-        widget.onOpen(_lastSelected);
-      }
+      print("Open '${_lastSelected!.path}' file");
+      widget.onOpen?.call(_lastSelected!);
     }
   }
 
@@ -137,7 +135,7 @@ class _FileDialogState extends State<FileDialog>
             style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).textTheme.body1.color)),
+                color: Theme.of(context).textTheme.bodyText1!.color)),
         SizedBox(height: 15),
         Expanded(
           child: Card(
@@ -169,13 +167,15 @@ class _FileDialogState extends State<FileDialog>
 
 class FileDialogRow extends StatefulWidget {
   final FileSystemEntity fsEntity;
-  final Function(FileSystemEntity) onAction;
-  final Function(FileSystemEntity) onSelect;
+  final Function(FileSystemEntity)? onAction;
+  final Function(FileSystemEntity)? onSelect;
   final bool isSelectable;
   FileDialogRow(
-      {Key key, this.fsEntity, this.onAction, this.onSelect, bool isSelectable})
-      : isSelectable = (isSelectable == null) ? true : isSelectable,
-        super(key: key);
+      {super.key,
+      required this.fsEntity,
+      this.onAction,
+      this.onSelect,
+      this.isSelectable = true});
   @override
   _FileDialogRowState createState() => _FileDialogRowState();
 }
@@ -234,12 +234,12 @@ class _FileDialogRowState extends State<FileDialogRow> {
           behavior: HitTestBehavior.opaque,
           onTap: widget.isSelectable
               ? () {
-                  if (widget.onSelect != null) widget.onSelect(widget.fsEntity);
+                  widget.onSelect?.call(widget.fsEntity);
                   select();
                 }
               : null,
           onDoubleTap: () {
-            if (widget.onAction != null) widget.onAction(widget.fsEntity);
+            widget.onAction?.call(widget.fsEntity);
           },
           child: Row(mainAxisSize: MainAxisSize.max, children: [
             SizedBox(width: 5),
@@ -266,13 +266,15 @@ class _FileDialogRowState extends State<FileDialogRow> {
 
 class FileDialogUpRow extends StatefulWidget {
   final FileSystemEntity fsEntity;
-  final Function(FileSystemEntity) onAction;
-  final Function(FileSystemEntity) onSelect;
+  final Function(FileSystemEntity)? onAction;
+  final Function(FileSystemEntity)? onSelect;
   final bool isSelectable;
   FileDialogUpRow(
-      {Key key, this.fsEntity, this.onAction, this.onSelect, bool isSelectable})
-      : isSelectable = (isSelectable == null) ? true : isSelectable,
-        super(key: key);
+      {super.key,
+      required this.fsEntity,
+      this.onAction,
+      this.onSelect,
+      this.isSelectable = true});
   @override
   _FileDialogUpRowState createState() => _FileDialogUpRowState();
 }
@@ -330,12 +332,12 @@ class _FileDialogUpRowState extends State<FileDialogUpRow> {
           behavior: HitTestBehavior.opaque,
           onTap: widget.isSelectable
               ? () {
-                  if (widget.onSelect != null) widget.onSelect(widget.fsEntity);
+                  widget.onSelect?.call(widget.fsEntity);
                   select();
                 }
               : null,
           onDoubleTap: () {
-            if (widget.onAction != null) widget.onAction(widget.fsEntity);
+            widget.onAction?.call(widget.fsEntity);
           },
           child: Row(mainAxisSize: MainAxisSize.max, children: [
             SizedBox(width: 5),

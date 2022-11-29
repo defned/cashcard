@@ -1,4 +1,4 @@
-import 'package:example_flutter/app/app.dart';
+import 'package:cashcard/app/app.dart';
 import 'package:flutter/material.dart';
 import 'package:mysql1/mysql1.dart';
 
@@ -29,18 +29,18 @@ class DbRecordDataSource extends DataTableSource {
   int _selectedCount = 0;
 
   @override
-  DataRow getRow(int index) {
+  DataRow? getRow(int index) {
     assert(index >= 0);
     if (index >= _dbRecords.length) return null;
     final DbRecord dbRecord = _dbRecords[index];
     return DataRow.byIndex(
       index: index,
       selected: dbRecord.selected,
-      onSelectChanged: (bool value) {
+      onSelectChanged: (bool? value) {
         if (dbRecord.selected != value) {
-          _selectedCount += value ? 1 : -1;
+          _selectedCount += value == true ? 1 : -1;
           assert(_selectedCount >= 0);
-          dbRecord.selected = value;
+          if (value != null) dbRecord.selected = value;
           notifyListeners();
         }
       },
@@ -95,9 +95,14 @@ class Db {
   final String password;
   final String dbName;
 
-  MySqlConnection _connection;
+  late MySqlConnection _connection;
 
-  Db({this.host, this.port, this.userName, this.password, this.dbName});
+  Db(
+      {required this.host,
+      required this.port,
+      required this.userName,
+      required this.password,
+      required this.dbName});
 
   Future connect() async {
     assert(_connection == null);
@@ -111,9 +116,9 @@ class Db {
   }
 
   Future disconnect() async {
-    assert(_connection != null);
+    // assert(_connection != null);
     await _connection.close();
-    _connection = null;
+    // _connection = null;
   }
 
   Future getAll(String searchTerm) async {
@@ -190,7 +195,7 @@ class Db {
     }
   }
 
-  Future import(List<DbRecord> records, {Function(double) onProgress}) async {
+  Future import(List<DbRecord> records, {Function(double)? onProgress}) async {
     try {
       await connect();
       int imported = 0;

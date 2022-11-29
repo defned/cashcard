@@ -1,10 +1,11 @@
-import 'package:example_flutter/util/extensions.dart';
+import 'package:cashcard/util/extensions.dart';
 import 'package:flutter/material.dart';
 
 class ProgressDialog extends StatefulWidget {
   final double progress;
   final int maxCount;
-  ProgressDialog({Key key, this.progress, this.maxCount}) : super(key: key);
+  const ProgressDialog(
+      {super.key, required this.progress, required this.maxCount});
   @override
   ProgressDialogState createState() => ProgressDialogState();
 }

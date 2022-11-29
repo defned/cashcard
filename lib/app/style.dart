@@ -49,25 +49,25 @@ TextTheme whiteTextTheme() => TextTheme(
           fontSize: 12),
 
       /// Default text style in the most cases
-      body1: TextStyle(
+      bodyText1: TextStyle(
           fontWeight: FontWeight.w700,
           color: AppColors.enabledColor,
           fontSize: 14),
-      body2: TextStyle(
+      bodyText2: TextStyle(
           fontWeight: FontWeight.w700, color: AppColors.accent, fontSize: 14),
-      display1: TextStyle(
+      displayLarge: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w700,
           color: AppColors.enabledColor),
-      display2: TextStyle(
+      displayMedium: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w700,
           color: AppColors.enabledColor),
-      display3: TextStyle(
+      displaySmall: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w700,
           color: AppColors.enabledColor),
-      subtitle: TextStyle(
+      subtitle1: TextStyle(
           fontWeight: FontWeight.w700,
           color: AppColors.enabledColor,
           fontSize: 11),
@@ -88,25 +88,25 @@ TextTheme blackTextTheme() => TextTheme(
           fontSize: 12),
 
       /// Default text style in the most cases
-      body1: TextStyle(
+      bodyText1: TextStyle(
           fontWeight: FontWeight.w700,
           color: AppColors.brightText,
           fontSize: 14),
-      body2: TextStyle(
+      bodyText2: TextStyle(
           fontWeight: FontWeight.w700, color: AppColors.accent, fontSize: 14),
-      display1: TextStyle(
+      displayLarge: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w700,
           color: AppColors.brightText),
-      display2: TextStyle(
+      displayMedium: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w700,
           color: AppColors.brightText),
-      display3: TextStyle(
+      displaySmall: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w700,
           color: AppColors.brightText),
-      subtitle: TextStyle(
+      subtitle1: TextStyle(
           fontWeight: FontWeight.w700,
           color: AppColors.brightText,
           fontSize: 11),
@@ -131,11 +131,10 @@ ThemeData whiteTheme() => ThemeData(
           size: 16.0,
           color: AppColors.enabledColor,
         ),
-        textTheme: TextTheme(
-            title: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontFamily: primaryFontFamily,
-                color: AppColors.enabledColor))),
+        titleTextStyle: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontFamily: primaryFontFamily,
+            color: AppColors.enabledColor)),
     textTheme: whiteTextTheme(),
     dialogTheme: DialogTheme(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -158,7 +157,8 @@ ThemeData whiteTheme() => ThemeData(
 
     /// Modifies the cursor color in TextFormField
     colorScheme: ColorScheme.light(primary: AppColors.accent),
-    textSelectionColor: AppColors.accent.withOpacity(0.2),
+    textSelectionTheme: TextSelectionThemeData(
+        selectionColor: AppColors.accent.withOpacity(0.2)),
     inputDecorationTheme: InputDecorationTheme(
       filled: false,
       labelStyle: TextStyle(
@@ -197,11 +197,10 @@ ThemeData blackTheme() => ThemeData(
           size: 16.0,
           color: AppColors.brightText,
         ),
-        textTheme: TextTheme(
-            title: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontFamily: primaryFontFamily,
-                color: AppColors.brightText))),
+        titleTextStyle: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontFamily: primaryFontFamily,
+            color: AppColors.brightText)),
     textTheme: blackTextTheme(),
     dialogTheme: DialogTheme(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -224,7 +223,8 @@ ThemeData blackTheme() => ThemeData(
 
     /// Modifies the cursor color in TextFormField
     colorScheme: ColorScheme.light(primary: AppColors.accent),
-    textSelectionColor: AppColors.accent.withOpacity(0.2),
+    textSelectionTheme: TextSelectionThemeData(
+        selectionColor: AppColors.accent.withOpacity(0.2)),
     inputDecorationTheme: InputDecorationTheme(
       filled: false,
       labelStyle: TextStyle(
