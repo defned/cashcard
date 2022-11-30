@@ -8,6 +8,7 @@ android/
 windows/
 build/
 ios/
+linux/
 macos/
 packages
 .flutter-plugins

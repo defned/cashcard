@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:another_flushbar/flushbar.dart';
 import 'package:cashcard/db/db.dart';
+import 'package:cashcard/util/logging.dart';
 import 'package:path/path.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cashcard/app/app.dart';
@@ -71,7 +72,7 @@ class OverviewPageState extends State<OverviewPage>
       showInfo("${tr('pay')} ${tr('succeeded')}");
       resetFields();
     } catch (e) {
-      showError(tr("${e.toString()}"));
+      showError(tr(e.toString()));
     }
   }
 
@@ -82,7 +83,7 @@ class OverviewPageState extends State<OverviewPage>
       showInfo("${tr('topUp')} ${tr('succeeded')}");
       resetFields();
     } catch (e) {
-      showError(tr("${e.toString()}"));
+      showError(tr(e.toString()));
     }
   }
 
@@ -109,7 +110,7 @@ class OverviewPageState extends State<OverviewPage>
         _cardIdFieldController.text = data;
         _balanceFieldController.text = "${record.balance} Ft";
       } catch (e) {
-        showError(tr("${e.toString()}"));
+        showError(tr(e.toString()));
       }
     }
   }
@@ -129,16 +130,15 @@ class OverviewPageState extends State<OverviewPage>
         flushbarPosition: FlushbarPosition.TOP,
         margin: EdgeInsets.only(
             left: MediaQuery.of(this.context).size.width - 500 - 30, top: 15),
-        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderRadius: const BorderRadius.all(Radius.circular(8)),
         maxWidth: 500,
-        duration: Duration(milliseconds: 1500),
+        duration: const Duration(milliseconds: 1500),
         backgroundColor: AppColors.ok,
         messageText: Text(
           info,
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 28, color: Colors.white),
-        ))
-      ..show(this.context);
+          style: const TextStyle(fontSize: 28, color: Colors.white),
+        )).show(this.context);
   }
 
   showError(String error) {
@@ -147,16 +147,15 @@ class OverviewPageState extends State<OverviewPage>
         flushbarPosition: FlushbarPosition.TOP,
         margin: EdgeInsets.only(
             left: MediaQuery.of(this.context).size.width - 500 - 30, top: 15),
-        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderRadius: const BorderRadius.all(Radius.circular(8)),
         maxWidth: 500,
-        duration: Duration(milliseconds: 2000),
+        duration: const Duration(milliseconds: 2000),
         backgroundColor: AppColors.error,
         messageText: Text(
           error,
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 28, color: Colors.white),
-        ))
-      ..show(this.context);
+          style: const TextStyle(fontSize: 28, color: Colors.white),
+        )).show(this.context);
   }
 
   // bool _validId = false;
@@ -169,7 +168,7 @@ class OverviewPageState extends State<OverviewPage>
   final FocusNode _propertyFocus = FocusNode();
 
   void refresh(Function() f) {
-    Future.delayed(Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) setState(f);
     });
   }
@@ -180,12 +179,12 @@ class OverviewPageState extends State<OverviewPage>
       appBar: AppBar(
         title: Text(
           tr('title'),
-          style: TextStyle(fontSize: 20),
+          style: const TextStyle(fontSize: 20),
         ),
         actions: <Widget>[
           IconButton(
               tooltip: tr("aboutTooltip"),
-              icon: Icon(Icons.info_outline),
+              icon: const Icon(Icons.info_outline),
               onPressed: showAbout)
         ],
       ),
@@ -193,7 +192,7 @@ class OverviewPageState extends State<OverviewPage>
         autofocus: true,
         focusNode: _pageFocus,
         onKey: (event) {
-          print(event);
+          log(event);
           if (event is RawKeyDownEvent) {
             // bool isCTRL = Platform.isMacOS
             //     ? event.isMetaPressed
@@ -224,7 +223,7 @@ class OverviewPageState extends State<OverviewPage>
         },
         child: Center(
           child: Container(
-            constraints: BoxConstraints(maxWidth: 1000),
+            constraints: const BoxConstraints(maxWidth: 1000),
             padding: const EdgeInsets.symmetric(horizontal: 50.0),
             child: Column(
               mainAxisSize: MainAxisSize.max,
@@ -249,7 +248,7 @@ class OverviewPageState extends State<OverviewPage>
             Expanded(
               child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
                 AutoSizeText(tr('cardId'),
-                    minFontSize: 25, style: TextStyle(fontSize: 35)),
+                    minFontSize: 25, style: const TextStyle(fontSize: 35)),
                 TextFormField(
                   enabled: false,
                   focusNode: cardIdFocus,
@@ -258,7 +257,7 @@ class OverviewPageState extends State<OverviewPage>
                   autocorrect: false,
                   // autofocus: true,
                   // autovalidate: true,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     disabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     enabledBorder: InputBorder.none,
@@ -268,7 +267,7 @@ class OverviewPageState extends State<OverviewPage>
                   //   return null;
                   // },
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
                       color: AppColors.brightText),
@@ -286,14 +285,14 @@ class OverviewPageState extends State<OverviewPage>
             //   },
             //   icon: Icon(Icons.input),
             // ),
-            SizedBox(width: 30),
+            const SizedBox(width: 30),
             Expanded(
               child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
                 AutoSizeText(tr('balance'),
-                    minFontSize: 25, style: TextStyle(fontSize: 35)),
+                    minFontSize: 25, style: const TextStyle(fontSize: 35)),
                 TextFormField(
                   enabled: false,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     disabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     enabledBorder: InputBorder.none,
@@ -309,7 +308,7 @@ class OverviewPageState extends State<OverviewPage>
                   //   return null;
                   // },
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
                       color: AppColors.brightText),
@@ -322,7 +321,7 @@ class OverviewPageState extends State<OverviewPage>
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
-              Text(tr('amount'), style: TextStyle(fontSize: 40)),
+              Text(tr('amount'), style: const TextStyle(fontSize: 40)),
               RawKeyboardListener(
                 focusNode: _propertyFocus,
                 onKey: (event) {
@@ -342,14 +341,14 @@ class OverviewPageState extends State<OverviewPage>
                       autocorrect: false,
                       // autovalidate: true,
                       enableSuggestions: false,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         disabledBorder: UnderlineInputBorder(
                             borderSide:
                                 BorderSide(color: AppColors.brightText)),
                       ),
                       controller: _propertyFieldController,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 60,
                         fontWeight: FontWeight.bold,
                         color: AppColors.accent,
@@ -379,11 +378,11 @@ class OverviewPageState extends State<OverviewPage>
                       },
                     ),
                     if (_propertyFieldController.text.isNotEmpty)
-                      Positioned(
+                      const Positioned(
                         bottom: 0,
                         left: 0,
                         child: Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
+                          padding: EdgeInsets.only(bottom: 16.0),
                           child: Text(
                             "Ft",
                             style: TextStyle(
@@ -400,14 +399,14 @@ class OverviewPageState extends State<OverviewPage>
                           child: IconButton(
                             iconSize: 35,
                             onPressed: () {
-                              Future.delayed(Duration(milliseconds: 50))
+                              Future.delayed(const Duration(milliseconds: 50))
                                   .then((_) {
                                 setState(() {
                                   _propertyFieldController.clear();
                                 });
                               });
                             },
-                            icon: Icon(Icons.clear),
+                            icon: const Icon(Icons.clear),
                           ),
                         ),
                       ),
@@ -423,12 +422,12 @@ class OverviewPageState extends State<OverviewPage>
 
   Widget createButtons() {
     return Container(
-      constraints: BoxConstraints(minHeight: 400),
+      constraints: const BoxConstraints(minHeight: 400),
       child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Container(
           height: 100,
-          constraints: BoxConstraints(maxWidth: 800),
+          constraints: const BoxConstraints(maxWidth: 800),
           child: Row(
             mainAxisSize: MainAxisSize.max,
             children: <Widget>[
@@ -441,7 +440,7 @@ class OverviewPageState extends State<OverviewPage>
             ],
           ),
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
               color: Colors.black,
@@ -450,7 +449,7 @@ class OverviewPageState extends State<OverviewPage>
                 width: 3,
                 color: AppColors.brightText,
               )),
-          constraints: BoxConstraints(maxWidth: 600),
+          constraints: const BoxConstraints(maxWidth: 600),
           child: VirtualKeyboard(
             fontSize: 45,
             textColor: AppColors.brightText,
@@ -460,52 +459,52 @@ class OverviewPageState extends State<OverviewPage>
             textController: _propertyFieldController,
           ),
         ),
-        SizedBox(height: 30)
+        const SizedBox(height: 30)
       ]),
     );
   }
 
   /// Fired when the virtual keyboard key is pressed.
-  _onKeyPress(VirtualKeyboardKey key) {
-    TextEditingController ctrl;
-
-    // if (cardIdFocus.hasFocus) {
-    //   ctrl = _cardIdFieldController;
-    // } else if (propertyFocus.hasFocus) {
-    ctrl = _propertyFieldController;
-    // } else
-    //   return;
-
-    if (key.keyType == VirtualKeyboardKeyType.String) {
-      ctrl.text =
-          ctrl.text + ((shiftEnabled == true ? key.capsText : key.text) ?? "");
-    } else if (key.keyType == VirtualKeyboardKeyType.Action) {
-      switch (key.action) {
-        case VirtualKeyboardKeyAction.Backspace:
-          if (ctrl.text.length == 0) return;
-          ctrl.text = ctrl.text.substring(0, ctrl.text.length - 1);
-          // if (text.length == 0) return;
-          // text = text.substring(0, text.length - 1);
-          break;
-        case VirtualKeyboardKeyAction.Return:
-          ctrl.text = ctrl.text + '\n';
-          // text = text + '\n';
-          break;
-        case VirtualKeyboardKeyAction.Space:
-          ctrl.text = ctrl.text + (key.text ?? "");
-          // text = text + key.text;
-          break;
-        case VirtualKeyboardKeyAction.Shift:
-          shiftEnabled = !shiftEnabled;
-          break;
-        default:
-      }
-    }
-    // Update the screen
-    setState(() {
-      if (ctrl == _propertyFieldController) {}
-    });
-  }
+//   _onKeyPress(VirtualKeyboardKey key) {
+//     TextEditingController ctrl;
+//
+//     // if (cardIdFocus.hasFocus) {
+//     //   ctrl = _cardIdFieldController;
+//     // } else if (propertyFocus.hasFocus) {
+//     ctrl = _propertyFieldController;
+//     // } else
+//     //   return;
+//
+//     if (key.keyType == VirtualKeyboardKeyType.String) {
+//       ctrl.text =
+//           ctrl.text + ((shiftEnabled == true ? key.capsText : key.text) ?? "");
+//     } else if (key.keyType == VirtualKeyboardKeyType.Action) {
+//       switch (key.action) {
+//         case VirtualKeyboardKeyAction.Backspace:
+//           if (ctrl.text.isEmpty) return;
+//           ctrl.text = ctrl.text.substring(0, ctrl.text.length - 1);
+//           // if (text.length == 0) return;
+//           // text = text.substring(0, text.length - 1);
+//           break;
+//         case VirtualKeyboardKeyAction.Return:
+//           ctrl.text = '${ctrl.text}\n';
+//           // text = text + '\n';
+//           break;
+//         case VirtualKeyboardKeyAction.Space:
+//           ctrl.text = ctrl.text + (key.text ?? "");
+//           // text = text + key.text;
+//           break;
+//         case VirtualKeyboardKeyAction.Shift:
+//           shiftEnabled = !shiftEnabled;
+//           break;
+//         default:
+//       }
+//     }
+//     // Update the screen
+//     setState(() {
+//       if (ctrl == _propertyFieldController) {}
+//     });
+//   }
 
   bool isButtonsActive = true;
   Widget createButton(String s, {Null Function()? onTap}) {
@@ -555,77 +554,77 @@ class OverviewPageState extends State<OverviewPage>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   Icons.info_outline,
                   color: Colors.black,
                   size: 100,
                 ),
-                SizedBox(width: 25),
+                const SizedBox(width: 25),
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: 5),
+                      const SizedBox(height: 5),
                       RichText(
                           text: TextSpan(
                         text: "${tr('author')}: ",
                         children: [
                           TextSpan(
-                              text: "${tr('authorName')}",
-                              style: TextStyle(
+                              text: tr('authorName'),
+                              style: const TextStyle(
                                   fontSize: 21,
                                   color: Colors.black,
                                   fontWeight: FontWeight.w900)),
                         ],
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 21,
                             color: Colors.black,
                             fontWeight: FontWeight.bold),
                       )),
-                      SizedBox(height: 5),
+                      const SizedBox(height: 5),
                       RichText(
                           text: TextSpan(
                         text: "${tr('email')}: ",
                         children: [
                           TextSpan(
-                              text: "${tr('authorEmail')}",
-                              style: TextStyle(
+                              text: tr('authorEmail'),
+                              style: const TextStyle(
                                   fontSize: 21,
                                   color: Colors.black,
                                   fontWeight: FontWeight.w900)),
                         ],
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 21,
                             color: Colors.black,
                             fontWeight: FontWeight.bold),
                       )),
-                      SizedBox(height: 5),
+                      const SizedBox(height: 5),
                       RichText(
                           text: TextSpan(
                         text: "${tr('version')}: ",
                         children: [
                           TextSpan(
-                              text: "${tr('versionNumber')}",
-                              style: TextStyle(
+                              text: tr('versionNumber'),
+                              style: const TextStyle(
                                   fontSize: 21,
                                   color: Colors.black,
                                   fontWeight: FontWeight.w900)),
                         ],
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 21,
                             color: Colors.black,
                             fontWeight: FontWeight.bold),
                       )),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       Text(
-                        "${tr('about')}",
-                        style: TextStyle(
+                        tr('about'),
+                        style: const TextStyle(
                             fontSize: 18,
                             color: Colors.black,
                             fontWeight: FontWeight.bold),
                       ),
-                      SizedBox(height: 5),
+                      const SizedBox(height: 5),
                     ],
                   ),
                 ),
@@ -644,11 +643,11 @@ class OverviewPageState extends State<OverviewPage>
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.grey.shade200,
-          content: Container(
+          content: SizedBox(
             width: MediaQuery.of(context).size.width / 2,
             height: MediaQuery.of(context).size.height / 2,
             child: Theme(
-              data: whiteTheme(),
+              data: blackTheme(),
               child: FileDialog(
                 title: tr('importAction'),
                 onOpen: (fs) async {
@@ -671,7 +670,7 @@ class OverviewPageState extends State<OverviewPage>
   }
 
   showExportDialog() {
-    final DbRecordDataSource _dbRecordsDataSource = DbRecordDataSource()
+    final DbRecordDataSource dbRecordsDataSource = DbRecordDataSource()
       ..init("");
     showDialog<void>(
       barrierDismissible: false,
@@ -679,22 +678,22 @@ class OverviewPageState extends State<OverviewPage>
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.grey.shade200,
-          content: Container(
+          content: SizedBox(
             width: MediaQuery.of(context).size.width / 2,
             height: MediaQuery.of(context).size.height / 2,
             child: Theme(
-              data: whiteTheme(),
+              data: blackTheme(),
               child: FileDialog(
                 title: tr('exportAction'),
-                target: FileDialogTarget.DIRECTORY,
+                target: FileDialogTarget.tDIRECTORY,
                 onOpen: (dir) async {
-                  List<DbRecord> records = _dbRecordsDataSource.getRecords();
+                  List<DbRecord> records = dbRecordsDataSource.getRecords();
                   String serializedRecords =
                       serializeRecordsIntoCSV(records).join("\n");
                   File exportFile = File(join(dir.absolute.path,
                       "export-${DateTime.now().toIso8601String().replaceAll(".", "").replaceAll(":", "").replaceAll("-", "").replaceAll(" ", "")}.csv"));
                   exportFile.writeAsStringSync(serializedRecords);
-                  print("Export succeeded to '${exportFile.absolute.path}'");
+                  log("Export succeeded to '${exportFile.absolute.path}'");
                   showInfo(
                       "${tr('exportAction')} ${tr('succeeded')} ${records.length}/${records.length}");
                 },
@@ -709,7 +708,7 @@ class OverviewPageState extends State<OverviewPage>
   List<DbRecord> serializeRecordsFromCSV(FileSystemEntity fs) {
     if (fs is! File) throw tr('invalidImportSource');
 
-    List<String> lines = (fs as File).readAsLinesSync();
+    List<String> lines = (fs).readAsLinesSync();
     String firstLine = lines.first.toUpperCase();
     Map<String, int> columnIds = {
       'ID': 0,
@@ -732,34 +731,35 @@ class OverviewPageState extends State<OverviewPage>
     for (var i = hasHeader ? 1 : 0; i < lines.length; i++) {
       List<String> splitted = lines[i].split(';');
       if (splitted.length != header.length) {
-        print(tr('malformedInput'));
+        log(tr('malformedInput'));
         continue;
       }
 
       if (splitted[columnIds['ID']!].isEmpty) {
-        print("Skipped record due to missing or empty property '${[
+        log("Skipped record due to missing or empty property '${[
           splitted[columnIds['ID']!]
         ]}'");
         continue;
       }
 
-      if ((columnIds['BALANCE']!) != -1)
+      if ((columnIds['BALANCE']!) != -1) {
         res.add(DbRecord(
           splitted[columnIds['ID']!],
           int.parse(splitted[columnIds['BALANCE']!]),
         ));
+      }
     }
 
     return res;
   }
 
   List<String> serializeRecordsIntoCSV(List<DbRecord> records) {
-    const String SEP = ";";
+    const String kSEP = ";";
 
-    List<String> res = ['ID${SEP}BALANCE$SEP'];
-    records.forEach((record) {
-      res.add("${record.id}$SEP${record.balance}$SEP");
-    });
+    List<String> res = ['ID${kSEP}BALANCE$kSEP'];
+    for (var record in records) {
+      res.add("${record.id}$kSEP${record.balance}$kSEP");
+    }
 
     return res;
   }

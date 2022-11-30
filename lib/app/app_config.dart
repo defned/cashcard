@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cashcard/util/logging.dart';
 import 'package:path/path.dart';
 
 class AppConfig {
@@ -21,8 +22,8 @@ class AppConfig {
 
     if (!_configFile.existsSync()) {
       try {
-        print("Configuration is not found");
-        print("Create configuration on filesystem at '${_configFile.path}'");
+        log("Configuration is not found");
+        log("Create configuration on filesystem at '${_configFile.path}'");
         _configFile.writeAsStringSync(jsonEncode({
           "db": {
             "host": "localhost",
@@ -42,22 +43,22 @@ class AppConfig {
           "language": "en"
         }));
       } catch (e) {
-        print("ERROR - ${e.toString()}");
+        log("ERROR - ${e.toString()}");
         rethrow;
       }
     }
 
-    print("Load configuration from filesystem from '${_configFile.path}'");
+    log("Load configuration from filesystem from '${_configFile.path}'");
     _config = jsonDecode(_configFile.readAsStringSync());
   }
 
   static store() {
-    print("Store configuration on filesystem ...");
+    log("Store configuration on filesystem ...");
     try {
       _configFile.writeAsStringSync(jsonEncode(_config));
-      print("Done");
+      log("Done");
     } catch (e) {
-      print("ERROR - ${e.toString()}");
+      log("ERROR - ${e.toString()}");
       rethrow;
     }
   }

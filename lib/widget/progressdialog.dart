@@ -40,8 +40,9 @@ class ProgressDialogState extends State<ProgressDialog>
           Flexible(
               child: Text(tr('progress'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),
-          SizedBox(height: 20),
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.bold))),
+          const SizedBox(height: 20),
           if (progress.value == 1)
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -51,10 +52,11 @@ class ProgressDialogState extends State<ProgressDialog>
                   size: 40,
                   color: Colors.green.shade600,
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Text(
                   "${tr('importAction')} ${tr('succeeded')} (${widget.maxCount} / ${widget.maxCount})",
-                  style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 21, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -69,10 +71,11 @@ class ProgressDialogState extends State<ProgressDialog>
                     value: progress.value,
                   ),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Text(
                   "${(progress.value * 100).ceil()}%",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 )
               ],
             ),
@@ -81,12 +84,12 @@ class ProgressDialogState extends State<ProgressDialog>
             mainAxisAlignment: MainAxisAlignment.end,
             children: <Widget>[
               MaterialButton(
-                child: Text(tr('close')),
                 onPressed: progress.value == 1
                     ? () {
                         Navigator.maybePop(context);
                       }
                     : null,
+                child: Text(tr('close')),
               )
             ],
           ),

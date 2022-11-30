@@ -1,15 +1,14 @@
 import 'dart:io';
 
 import 'package:cashcard/util/extensions.dart';
+import 'package:cashcard/util/logging.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-enum FileDialogTarget { FILE, DIRECTORY }
+enum FileDialogTarget { tFILE, tDIRECTORY }
 
 class FileDialogItem {
-  FileDialogItem(this.fsEntity, [bool selected = false])
-      : selected = selected,
-        color = Colors.white;
+  FileDialogItem(this.fsEntity, {this.selected = false}) : color = Colors.white;
   bool selected = false;
   Color color;
   FileSystemEntity fsEntity;
@@ -19,16 +18,16 @@ class FileDialog extends StatefulWidget {
   final Function(FileSystemEntity)? onOpen;
   final FileDialogTarget target;
   final String title;
-  FileDialog(
+  const FileDialog(
       {super.key,
       required this.title,
       this.onOpen,
-      this.target = FileDialogTarget.FILE});
+      this.target = FileDialogTarget.tFILE});
   @override
-  _FileDialogState createState() => _FileDialogState();
+  FileDialogState createState() => FileDialogState();
 }
 
-class _FileDialogState extends State<FileDialog>
+class FileDialogState extends State<FileDialog>
     with StateWithLocalization<FileDialog> {
   List<Widget> _widgets = [];
   FileSystemEntity? _lastSelected;
@@ -38,9 +37,9 @@ class _FileDialogState extends State<FileDialog>
 
     State state = keys[fsEntity]!.currentState!;
     if (fsEntity is Directory) {
-      if (state is _FileDialogUpRowState) {
+      if (state is FileDialogUpRowState) {
         stepInto(fsEntity.parent.path);
-      } else if (state is _FileDialogRowState) {
+      } else if (state is FileDialogRowState) {
         stepInto(fsEntity.path);
       }
     }
@@ -57,9 +56,9 @@ class _FileDialogState extends State<FileDialog>
     keys.forEach((fs, key) {
       if (fs != fsEntity) {
         State state = keys[fs]!.currentState!;
-        if (state is _FileDialogUpRowState) {
+        if (state is FileDialogUpRowState) {
           state.deselect();
-        } else if (state is _FileDialogRowState) {
+        } else if (state is FileDialogRowState) {
           state.deselect();
         }
       }
@@ -82,19 +81,18 @@ class _FileDialogState extends State<FileDialog>
       return a.path.compareTo(b.path);
     });
     List<Widget> items = [];
-    if (curDir.parent != null)
-      items.add(FileDialogUpRow(
-          key: _getNewKey<_FileDialogUpRowState>(curDir),
-          fsEntity: curDir,
-          onAction: _action,
-          isSelectable: widget.target == FileDialogTarget.FILE,
-          onSelect: _select));
+    items.add(FileDialogUpRow(
+        key: _getNewKey<FileDialogUpRowState>(curDir),
+        fsEntity: curDir,
+        onAction: _action,
+        isSelectable: widget.target == FileDialogTarget.tFILE,
+        onSelect: _select));
     for (var i = 0; i < fsItems.length; i++) {
       items.add(FileDialogRow(
-          key: _getNewKey<_FileDialogRowState>(fsItems[i]),
+          key: _getNewKey<FileDialogRowState>(fsItems[i]),
           fsEntity: fsItems[i],
           onAction: _action,
-          isSelectable: widget.target == FileDialogTarget.FILE,
+          isSelectable: widget.target == FileDialogTarget.tFILE,
           onSelect: _select));
     }
 
@@ -116,12 +114,13 @@ class _FileDialogState extends State<FileDialog>
   }
 
   void _onPressed() {
-    if (widget.target == FileDialogTarget.DIRECTORY && _lastDirectory != null) {
-      print("Open '${_lastDirectory!.path}' directory");
+    if (widget.target == FileDialogTarget.tDIRECTORY &&
+        _lastDirectory != null) {
+      log("Open '${_lastDirectory!.path}' directory");
       widget.onOpen?.call(_lastDirectory!);
-    } else if (widget.target == FileDialogTarget.FILE &&
+    } else if (widget.target == FileDialogTarget.tFILE &&
         _lastSelected != null) {
-      print("Open '${_lastSelected!.path}' file");
+      log("Open '${_lastSelected!.path}' file");
       widget.onOpen?.call(_lastSelected!);
     }
   }
@@ -130,13 +129,13 @@ class _FileDialogState extends State<FileDialog>
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Text(widget.title,
             style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).textTheme.bodyText1!.color)),
-        SizedBox(height: 15),
+        const SizedBox(height: 15),
         Expanded(
           child: Card(
             child: ListView(
@@ -144,13 +143,13 @@ class _FileDialogState extends State<FileDialog>
             ),
           ),
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: <Widget>[
             MaterialButton(
-              child: Text(tr('select')),
               onPressed: _onPressed,
+              child: Text(tr('select')),
             ),
             MaterialButton(
               child: Text(tr('close')),
@@ -170,17 +169,17 @@ class FileDialogRow extends StatefulWidget {
   final Function(FileSystemEntity)? onAction;
   final Function(FileSystemEntity)? onSelect;
   final bool isSelectable;
-  FileDialogRow(
+  const FileDialogRow(
       {super.key,
       required this.fsEntity,
       this.onAction,
       this.onSelect,
       this.isSelectable = true});
   @override
-  _FileDialogRowState createState() => _FileDialogRowState();
+  FileDialogRowState createState() => FileDialogRowState();
 }
 
-class _FileDialogRowState extends State<FileDialogRow> {
+class FileDialogRowState extends State<FileDialogRow> {
   String path = '';
   bool hovering = false;
   bool enabled = true;
@@ -194,8 +193,9 @@ class _FileDialogRowState extends State<FileDialogRow> {
     String parent = widget.fsEntity.parent.path;
     path = widget.fsEntity.path;
     path = path.replaceFirst(parent, '');
-    if (path.startsWith(Platform.isWindows ? '\\' : '/'))
+    if (path.startsWith(Platform.isWindows ? '\\' : '/')) {
       path = path.substring(1);
+    }
     super.initState();
   }
 
@@ -207,17 +207,19 @@ class _FileDialogRowState extends State<FileDialogRow> {
       });
 
   void select() {
-    if (!selected)
+    if (!selected) {
       setState(() {
         selected = !selected;
       });
+    }
   }
 
   void deselect() {
-    if (selected)
+    if (selected) {
       setState(() {
         selected = !selected;
       });
+    }
   }
 
   @override
@@ -242,7 +244,7 @@ class _FileDialogRowState extends State<FileDialogRow> {
             widget.onAction?.call(widget.fsEntity);
           },
           child: Row(mainAxisSize: MainAxisSize.max, children: [
-            SizedBox(width: 5),
+            const SizedBox(width: 5),
             Icon(
               (widget.fsEntity is Directory) ? Icons.folder : Icons.web_asset,
               color: (widget.fsEntity is Directory)
@@ -250,7 +252,7 @@ class _FileDialogRowState extends State<FileDialogRow> {
                   : Colors.grey.shade400,
               size: 25,
             ),
-            SizedBox(width: 5),
+            const SizedBox(width: 5),
             Flexible(
               child: Text(
                 path,
@@ -269,17 +271,17 @@ class FileDialogUpRow extends StatefulWidget {
   final Function(FileSystemEntity)? onAction;
   final Function(FileSystemEntity)? onSelect;
   final bool isSelectable;
-  FileDialogUpRow(
+  const FileDialogUpRow(
       {super.key,
       required this.fsEntity,
       this.onAction,
       this.onSelect,
       this.isSelectable = true});
   @override
-  _FileDialogUpRowState createState() => _FileDialogUpRowState();
+  FileDialogUpRowState createState() => FileDialogUpRowState();
 }
 
-class _FileDialogUpRowState extends State<FileDialogUpRow> {
+class FileDialogUpRowState extends State<FileDialogUpRow> {
   String path = '..';
   bool hovering = false;
   bool enabled = true;
@@ -303,17 +305,19 @@ class _FileDialogUpRowState extends State<FileDialogUpRow> {
       });
 
   void select() {
-    if (!selected)
+    if (!selected) {
       setState(() {
         selected = !selected;
       });
+    }
   }
 
   void deselect() {
-    if (selected)
+    if (selected) {
       setState(() {
         selected = !selected;
       });
+    }
   }
 
   @override
@@ -340,13 +344,13 @@ class _FileDialogUpRowState extends State<FileDialogUpRow> {
             widget.onAction?.call(widget.fsEntity);
           },
           child: Row(mainAxisSize: MainAxisSize.max, children: [
-            SizedBox(width: 5),
+            const SizedBox(width: 5),
             Icon(
               Icons.arrow_upward,
               color: Colors.grey.shade600,
               size: 25,
             ),
-            SizedBox(width: 5),
+            const SizedBox(width: 5),
             Flexible(
               child: Text(
                 path,

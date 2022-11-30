@@ -1,3 +1,7 @@
+// ignore: avoid_print
+void log(Object? logMsg) => print(logMsg);
+
+
 // import 'dart:async';
 // import 'dart:collection';
 // import 'dart:convert';
@@ -11,10 +15,10 @@
 // /// Configuration
 // /////////////////////////////
 
-// /// Logger name if you call print("message");
+// /// Logger name if you call log("message");
 // const String printLoggerName = "console";
 
-// /// Log level if you call print("message");
+// /// Log level if you call log("message");
 // const Level printLogLevel = Level.FINEST;
 
 // /// Minimum level for automatically record stack trace of the logging line
@@ -27,7 +31,7 @@
 //   Logger("").level = Level.FINE; // root level
 //   Logger(printLoggerName).level = _debugMode
 //       ? printLogLevel
-//       : Level.OFF; // Enable print() by default in debug mode
+//       : Level.OFF; // Enable log() by default in debug mode
 
 //   Logger("blocs").level = Level.FINE;
 
@@ -72,9 +76,9 @@
 
 // void disableLogging() => _loggingInitialized = false;
 
-// void handlePrint(Zone self, ZoneDelegate parent, Zone zone, String message) {
+// void handlelog(Zone self, ZoneDelegate parent, Zone zone, String message) {
 //   if (!_loggingInitialized) {
-//     return parent.print(zone, message);
+//     return parent.log(zone, message);
 //   }
 
 //   _printLogger.log(printLogLevel, message);
@@ -112,7 +116,7 @@
 //   void Function(String) parentPrint = Zone.current.parent.print;
 //   PrintHandler printHandler =
 //       (Zone self, ZoneDelegate parent, Zone zone, String message) {
-//     parentPrint(message);
+//     parentlog(message);
 //   };
 
 //   runZoned(() {
@@ -138,7 +142,7 @@
 //     if (message.length >= debugPrintMaxLength) {
 //       int remainingLength = message.length;
 
-//       debugPrint("${message.substring(0, firstLineMaxLength)}$tailMark");
+//       debuglog("${message.substring(0, firstLineMaxLength)}$tailMark");
 //       remainingLength -= firstLineMaxLength;
 
 //       int lineLength;
@@ -149,7 +153,7 @@
 //         lineLength = min(remainingLength,
 //             isLastLine ? lastLineMaxLength : middleLineMaxLength);
 
-//         debugPrint(
+//         debuglog(
 //             "$headMark${message.substring(start, start + lineLength)}${isLastLine ? "" : tailMark}");
 //       }
 
@@ -157,7 +161,7 @@
 //     }
 //   }
 
-//   debugPrint(message);
+//   debuglog(message);
 // }
 
 // void _logToQueue(LogRecord rec) {

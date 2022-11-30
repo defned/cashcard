@@ -1,9 +1,5 @@
-import 'dart:async';
-import 'dart:isolate';
-
 import 'package:cashcard/app/app.dart';
-import 'package:cashcard/app/app_config.dart';
-import 'package:libserialport/libserialport.dart';
+import 'package:flutter_libserialport/flutter_libserialport.dart';
 import 'package:flutter/foundation.dart'
     show debugDefaultTargetPlatformOverride;
 import 'package:flutter/material.dart';
@@ -23,7 +19,7 @@ import 'package:cashcard/util/serialport.dart';
 //       SendPort mainToIsolateStream = data;
 //       completer.complete(mainToIsolateStream);
 //     } else {
-//       print('[isolateToMainStream] $data');
+//       log('[isolateToMainStream] $data');
 //       serialPort.sink.add(data);
 //     }
 //   });
@@ -40,9 +36,9 @@ import 'package:cashcard/util/serialport.dart';
 
 //   SerialPort serialPort;
 //   mainToIsolateStream.listen((data) {
-//     print('[mainToIsolateStream] $data');
+//     log('[mainToIsolateStream] $data');
 //     if (data[0] == IsolateState.INIT) {
-//       print("Initialize and open serialport");
+//       log("Initialize and open serialport");
 //       serialPort = SerialPort(
 //         data[1],
 //         baudrate: data[2],
@@ -56,7 +52,7 @@ import 'package:cashcard/util/serialport.dart';
 //         }
 //         ..open();
 //     } else if (data[0] == IsolateState.EXIT) {
-//       print("Closing serialport");
+//       log("Closing serialport");
 //       serialPort.close();
 //     }
 //   });
@@ -86,16 +82,16 @@ void main() async {
   // final name = AppConfig.comPort;
   final port = SerialPort(name);
 
-  if (!port.openRead()) {
-    print(SerialPort.lastError);
-    return;
-  }
-
+//   if (!port.openRead()) {
+//     log(SerialPort.lastError);
+//     return;
+//   }
+//
   serialPort = MySerialPortReader(port, timeout: 1000);
   // reader.stream.listen((data) {
-  //   print('Received: ${utf8.decode(data)}');
+  //   log('Received: ${utf8.decode(data)}');
   // }, onDone: () {
-  //   print('Done');
+  //   log('Done');
   // });
 
   runApp(const AppComponent());

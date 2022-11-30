@@ -103,7 +103,7 @@
 //     try {
 //       availablePorts = SerialPort.availablePorts;
 //     } on Exception catch (e) {
-//       print(e);
+//       log(e);
 //     }
 //   }
 
@@ -367,7 +367,7 @@
 //                               AppConfig.comDelay,
 //                             ]);
 //                             AppConfig.store();
-//                             print("Serialport connection refresh succeeded");
+//                             log("Serialport connection refresh succeeded");
 //                             Scaffold.of(context).showSnackBar(SnackBar(
 //                                 backgroundColor: AppColors.ok,
 //                                 content: Text(
@@ -477,13 +477,13 @@
 //                       AppConfig.dbUserName = dbUserName;
 //                       AppConfig.dbPassword = dbPassword;
 //                       AppConfig.store();
-//                       print("Db connection refresh succeeded");
+//                       log("Db connection refresh succeeded");
 //                       Scaffold.of(context).showSnackBar(SnackBar(
 //                           backgroundColor: AppColors.ok,
 //                           content: Text(
 //                               "${tr('database')} ${tr('refresh').toLowerCase()} ${tr('succeeded')}")));
 //                     } catch (e) {
-//                       print("Db connection refresh failed");
+//                       log("Db connection refresh failed");
 //                       Scaffold.of(context).showSnackBar(SnackBar(
 //                           backgroundColor: AppColors.error,
 //                           content: Text(

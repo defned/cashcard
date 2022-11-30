@@ -12,12 +12,12 @@ class BottomCapsuleButton extends StatelessWidget {
     return Align(
         alignment: Alignment.bottomCenter,
         child: SafeArea(
-            minimum: EdgeInsets.only(bottom: 16),
+            minimum: const EdgeInsets.only(bottom: 16),
             child: CapsuleButton(
                 color: color,
                 onTap: onTap,
                 child: Text(text.toUpperCase(),
-                    style: TextStyle(
+                    style: const TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold)))));
   }
 }

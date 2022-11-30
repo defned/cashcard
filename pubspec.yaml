@@ -1,6 +1,6 @@
 name: cashcard
 description: An internal card based payment solution for kiosks.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # Flutter 3.3.9
 # In Windows, build-name is used as the major, minor, and patch parts
@@ -8,7 +8,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 0.0.4+1
 
 environment:
-  sdk: '>=2.18.5 <3.0.0'
+  sdk: ">=2.18.5 <3.0.0"
 
 dependencies:
   flutter:
@@ -30,7 +30,7 @@ dependencies:
   #     url: https://github.com/defned/ffi_libserialport.git
   #     ref: 40c358b09bca080f6d69d0f7bc50e242b7f1192d
   #   # path: ../ffi_libserialport
-  auto_size_text: any
+  auto_size_text: ^3.0.0
   fluro: any
   logging: any
   cupertino_icons: ^1.0.2

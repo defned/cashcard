@@ -6,25 +6,25 @@ class SubPage extends StatefulWidget {
   final Widget? child;
   final Function()? onPop;
   final List<Widget>? actions;
-  SubPage(
+  const SubPage(
       {super.key, required this.title, this.child, this.onPop, this.actions});
 
   @override
-  _SubPageState createState() => _SubPageState();
+  SubPageState createState() => SubPageState();
 }
 
-class _SubPageState extends State<SubPage> with StateWithLocalization<SubPage> {
+class SubPageState extends State<SubPage> with StateWithLocalization<SubPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
           widget.title,
-          style: TextStyle(fontSize: 20),
+          style: const TextStyle(fontSize: 20),
         ),
         leading: IconButton(
           tooltip: tr('back'),
-          icon: Icon(Icons.arrow_back_ios),
+          icon: const Icon(Icons.arrow_back_ios),
           onPressed: () {
             widget.onPop?.call();
             Navigator.of(context).pop();

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_icons/flutter_icons.dart';
 
 class ModalDialog extends StatelessWidget {
   final IconData icon;
@@ -34,16 +33,13 @@ class ModalDialog extends StatelessWidget {
 class WarningDialog extends ModalDialog {
   WarningDialog({super.key, List<Widget>? actions, Widget? content})
       : super(
-            icon: MaterialIcons.warning,
+            icon: Icons.warning,
             iconColor: Colors.red.shade600,
             content: content,
             actions: actions);
 }
 
 class QuestionDialog extends ModalDialog {
-  QuestionDialog({super.key, List<Widget>? actions, Widget? content})
-      : super(
-            icon: MaterialIcons.question_answer,
-            content: content,
-            actions: actions);
+  const QuestionDialog({super.key, List<Widget>? actions, Widget? content})
+      : super(icon: Icons.question_answer, content: content, actions: actions);
 }

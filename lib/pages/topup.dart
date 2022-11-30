@@ -7,7 +7,6 @@ import 'package:cashcard/widget/subpage.dart';
 import 'package:cashcard/util/extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_icons/flutter_icons.dart';
 
 /// Regsitration page
 class TopUpPage extends StatefulWidget {
@@ -15,10 +14,10 @@ class TopUpPage extends StatefulWidget {
   const TopUpPage({super.key});
 
   @override
-  _TopUpPageState createState() => _TopUpPageState();
+  TopUpPageState createState() => TopUpPageState();
 }
 
-class _TopUpPageState extends State<TopUpPage>
+class TopUpPageState extends State<TopUpPage>
     with StateWithLocalization<TopUpPage> {
   final TextEditingController _cardIdFieldController = TextEditingController();
   final GlobalKey<FormFieldState> _cardIdFieldKey = GlobalKey<FormFieldState>();
@@ -59,7 +58,7 @@ class _TopUpPageState extends State<TopUpPage>
         barrierDismissible: false,
         context: context,
         builder: (context) {
-          Future.delayed(Duration(milliseconds: 3000), () {
+          Future.delayed(const Duration(milliseconds: 3000), () {
             Navigator.maybePop(context);
             isBusy = false;
           });
@@ -71,10 +70,11 @@ class _TopUpPageState extends State<TopUpPage>
                   size: 40,
                   color: Colors.green.shade600,
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Text(
                   "${tr('topupPageTitle')} ${tr('succeeded')}",
-                  style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 21, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -84,13 +84,12 @@ class _TopUpPageState extends State<TopUpPage>
       );
     } catch (e) {
       String trErr = tr(e.toString());
-      if (trErr == null) trErr = e.toString();
 
       await showDialog<void>(
         barrierDismissible: false,
         context: context,
         builder: (context) {
-          Future.delayed(Duration(milliseconds: 3000), () {
+          Future.delayed(const Duration(milliseconds: 3000), () {
             Navigator.maybePop(context);
             isBusy = false;
           });
@@ -99,11 +98,11 @@ class _TopUpPageState extends State<TopUpPage>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  MaterialIcons.warning,
+                  Icons.warning,
                   size: 40,
                   color: Colors.red.shade600,
                 ),
-                SizedBox(width: 25),
+                const SizedBox(width: 25),
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -111,14 +110,14 @@ class _TopUpPageState extends State<TopUpPage>
                     children: [
                       Text(
                         "${tr('topupPageTitle')} ${tr('failed')}",
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 21, fontWeight: FontWeight.bold),
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       Flexible(
                         child: Text(
                           trErr,
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 21, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -139,7 +138,7 @@ class _TopUpPageState extends State<TopUpPage>
   final FocusNode _propertyFocus = FocusNode();
 
   void refresh(Function() f) {
-    Future.delayed(Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) setState(f);
     });
   }
@@ -150,7 +149,7 @@ class _TopUpPageState extends State<TopUpPage>
       onPop: () {},
       title: tr('topupPageTitle'),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
         child: Center(
           child: AspectRatio(
             aspectRatio: 1,
@@ -159,7 +158,7 @@ class _TopUpPageState extends State<TopUpPage>
                 Form(
                   child: Column(
                     children: <Widget>[
-                      Text(tr('cardId'), style: TextStyle(fontSize: 40)),
+                      Text(tr('cardId'), style: const TextStyle(fontSize: 40)),
                       RawKeyboardListener(
                         focusNode: _cardIdFocus,
                         onKey: (event) {
@@ -192,14 +191,14 @@ class _TopUpPageState extends State<TopUpPage>
                             return null;
                           },
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 40, fontWeight: FontWeight.bold),
                           key: _cardIdFieldKey,
                           controller: _cardIdFieldController,
                         ),
                       ),
-                      SizedBox(height: 30),
-                      Text(tr('amount'), style: TextStyle(fontSize: 40)),
+                      const SizedBox(height: 30),
+                      Text(tr('amount'), style: const TextStyle(fontSize: 40)),
                       RawKeyboardListener(
                         focusNode: _propertyFocus,
                         onKey: (event) {
@@ -214,7 +213,7 @@ class _TopUpPageState extends State<TopUpPage>
                           autocorrect: false,
                           // autovalidate: true,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 40, fontWeight: FontWeight.bold),
                           key: _propertyFieldKey,
                           validator: (value) {
@@ -244,7 +243,7 @@ class _TopUpPageState extends State<TopUpPage>
                   padding: const EdgeInsets.only(bottom: 40.0),
                   child: Align(
                     alignment: Alignment.bottomCenter,
-                    child: Container(
+                    child: SizedBox(
                       height: 80,
                       child: MaterialButton(
                         color: Colors.lightBlue.shade100,
@@ -254,7 +253,7 @@ class _TopUpPageState extends State<TopUpPage>
                             padding: const EdgeInsets.all(8.0),
                             child: Text(
                               tr('topupPageAction'),
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 40, fontWeight: FontWeight.bold),
                             ),
                           ),

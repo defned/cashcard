@@ -1,0 +1,12 @@
+[2:15:10 PM]: Spawning /Users/belakovics/bin/flutter_3.3.7/bin/flutter with args ["run","--machine","--start-paused","-d","macos","--devtools-server-address","http://127.0.0.1:9100/","--target","lib/main.dart"]
+[2:15:10 PM]: ..  in /Users/belakovics/Projects/BelakovicsEV/cashcard
+[2:15:10 PM]: ..  with {"toolEnv":{"FLUTTER_HOST":"VSCode","PUB_ENVIRONMENT":"vscode.dart-code"}}
+[2:15:10 PM]: PID: 11015
+[2:15:11 PM]: <== [{"event":"daemon.connected","params":{"version":"0.6.1","pid":11016}}]
+[2:15:11 PM]: <== [{"event":"app.start","params":{"appId":"855f0425-bba5-4227-b962-4c1f986cc7d8","deviceId":"macos","directory":"/Users/belakovics/Projects/BelakovicsEV/cashcard","supportsRestart":true,"launchMode":"run"}}]
+[2:15:11 PM]: <== Launching lib/main.dart on macOS in debug mode...
+[2:15:12 PM]: <== [{"event":"app.progress","params":{"appId":"855f0425-bba5-4227-b962-4c1f986cc7d8","id":"0","progressId":null,"message":"Building macOS application...","finished":false}}]
+[2:15:14 PM]: --- xcodebuild: WARNING: Using the first of multiple matching destinations:
+[2:15:14 PM]: { platform:macOS, arch:x86_64, id:20D2BD9D-0AB5-51AF-8E57-5BD98ED7590F }
+{ platform:macOS, arch:arm64, id:20D2BD9D-0AB5-51AF-8E57-5BD98ED7590F }
+[2:15:14 PM]: Process /Users/belakovics/bin/flutter_3.3.7/bin/flutter terminated! 0, null

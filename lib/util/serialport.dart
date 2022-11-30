@@ -27,11 +27,17 @@ import 'dart:ffi' as ffi;
 import 'dart:isolate';
 import 'dart:typed_data';
 
+// ignore_for_file: depend_on_referenced_packages
 import 'package:ffi/ffi.dart' as ffi;
+// ignore: implementation_imports
 import 'package:libserialport/src/bindings.dart';
+// ignore: implementation_imports
 import 'package:libserialport/src/dylib.dart';
+// ignore: implementation_imports
 import 'package:libserialport/src/error.dart';
+// ignore: implementation_imports
 import 'package:libserialport/src/port.dart';
+// ignore: implementation_imports
 import 'package:libserialport/src/util.dart';
 
 const int _kReadEvents = sp_event.SP_EVENT_RX_READY | sp_event.SP_EVENT_ERROR;
@@ -156,7 +162,7 @@ class _MySerialPortReaderImpl implements MySerialPortReader {
       }
 
       if (bytesWaiting == 0 && readBytes.isNotEmpty) {
-        // print(
+        // log(
         //     "Sending out data ... ($bytesWaiting)[$readBytes] ${readBytes.isNotEmpty}");
         args.sendPort.send(
             UnmodifiableByteBufferView(Uint8List.fromList(readBytes).buffer)
@@ -203,7 +209,7 @@ class _MySerialPortReaderImpl implements MySerialPortReader {
   //     int bytesWaiting = sp_input_waiting(_ttyFd.value);
 
   //     if (bytesWaiting > 0) {
-  //       print('Bytes waiting $bytesWaiting');
+  //       log('Bytes waiting $bytesWaiting');
   //       Pointer<Uint8> byteBuff = ffi.allocate(count: 512);
   //       int byteNum = sp_nonblocking_read(_ttyFd.value, byteBuff.cast(), 512);
 
@@ -223,11 +229,11 @@ class _MySerialPortReaderImpl implements MySerialPortReader {
   //     }
   //     _lastRead = CancelableOperation.fromFuture(
   //         Future.delayed(Duration(milliseconds: 100), read), onCancel: () {
-  //       // print("Cancelled");
+  //       // log("Cancelled");
   //     });
   //   };
   //   _lastRead = CancelableOperation.fromFuture(
   //       Future.delayed(Duration(milliseconds: 100), read), onCancel: () {
-  //     // print("Cancelled");
+  //     // log("Cancelled");
   //   });
   // }

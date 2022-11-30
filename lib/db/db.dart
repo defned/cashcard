@@ -1,4 +1,5 @@
 import 'package:cashcard/app/app.dart';
+import 'package:cashcard/util/logging.dart';
 import 'package:flutter/material.dart';
 import 'package:mysql1/mysql1.dart';
 
@@ -12,7 +13,7 @@ class DbRecordDataSource extends DataTableSource {
     notifyListeners();
   }
 
-  void sort<T>(Comparable<T> getField(DbRecord d), bool ascending) {
+  void sort<T>(Comparable<T> Function(DbRecord d) getField, bool ascending) {
     _dbRecords.sort((DbRecord a, DbRecord b) {
       if (!ascending) {
         final DbRecord c = a;
@@ -45,10 +46,10 @@ class DbRecordDataSource extends DataTableSource {
         }
       },
       cells: <DataCell>[
-        DataCell(Text('${dbRecord.id}',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+        DataCell(Text(dbRecord.id,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
         DataCell(Text('${dbRecord.balance} HUF',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
       ],
     );
   }
@@ -63,7 +64,9 @@ class DbRecordDataSource extends DataTableSource {
   int get selectedRowCount => _selectedCount;
 
   void selectAll(bool checked) {
-    for (DbRecord dessert in _dbRecords) dessert.selected = checked;
+    for (DbRecord dessert in _dbRecords) {
+      dessert.selected = checked;
+    }
     _selectedCount = checked ? _dbRecords.length : 0;
     notifyListeners();
   }
@@ -105,8 +108,7 @@ class Db {
       required this.dbName});
 
   Future connect() async {
-    assert(_connection == null);
-    _connection = await MySqlConnection.connect(new ConnectionSettings(
+    _connection = await MySqlConnection.connect(ConnectionSettings(
         host: host,
         port: port,
         user: userName,
@@ -129,8 +131,9 @@ class Db {
       var results = await _connection.query(
           'select id, balance from balance where (id like ?) and del_sp = "0000-00-00"',
           ['%$searchTerm%']);
-      for (int i = 0; i < results.length; i++)
+      for (int i = 0; i < results.length; i++) {
         res.add(DbRecord(results.elementAt(i)[0], results.elementAt(i)[1]));
+      }
     } finally {
       await disconnect();
     }
@@ -145,11 +148,11 @@ class Db {
           'select id from balance where id = ? and del_sp = "0000-00-00"',
           [id]);
 
-      if (results.length != 0) throw DbExceptions.alreadyExist;
+      if (results.isNotEmpty) throw DbExceptions.alreadyExist;
       // Insert some data
       var result =
           await _connection.query('insert into balance (id) values (?)', [id]);
-      print("Inserted row (${result.affectedRows} record) ${[id]}");
+      log("Inserted row (${result.affectedRows} record) ${[id]}");
     } finally {
       await disconnect();
     }
@@ -163,9 +166,11 @@ class Db {
           'select id, balance from balance where id = ? and del_sp = "0000-00-00"',
           [id]);
 
-      if (results.length < 1)
+      if (results.isEmpty) {
         throw DbExceptions.noRows;
-      else if (results.length > 1) throw DbExceptions.tooManyRows;
+      } else if (results.length > 1) {
+        throw DbExceptions.tooManyRows;
+      }
       return DbRecord(results.first[0], results.first[1]);
     } finally {
       await disconnect();
@@ -173,12 +178,12 @@ class Db {
   }
 
   Future pay(String id, int amount) {
-    if (!(amount != null && amount > 0)) throw DbExceptions.missingValueInput;
+    if (!(amount > 0)) throw DbExceptions.missingValueInput;
     return changeBalance(id, -1 * amount);
   }
 
   Future topUp(String id, int amount) {
-    if (!(amount != null && amount > 0)) throw DbExceptions.missingValueInput;
+    if (!(amount > 0)) throw DbExceptions.missingValueInput;
 
     return changeBalance(id, amount);
   }
@@ -189,7 +194,7 @@ class Db {
       var result = await _connection.query(
           'update balance set del_sp = SYSDATE(), del_sp = SYSDATE() where id in (${List.generate(ids.length, (_) => "?").join(',')}) and del_sp = "0000-00-00"',
           ids);
-      print("Deleted rows (${result.affectedRows} record) $ids");
+      log("Deleted rows (${result.affectedRows} record) $ids");
     } finally {
       await disconnect();
     }
@@ -201,27 +206,26 @@ class Db {
       int imported = 0;
       for (int i = 0; i < records.length; i++) {
         var result = await _connection.query(
-            'insert into balance (id) values (?) ON DUPLICATE KEY UPDATE balance = 0',
-            [
-              records[i].id,
-            ]);
-        print("Imported row (${result.affectedRows} records) " +
-            [records[i].id].toString());
+          'insert into balance (id) values (?) ON DUPLICATE KEY UPDATE balance = 0',
+          [records[i].id],
+        );
+        log("Imported row (${result.affectedRows} records) ${[records[i].id]}");
 
         if (onProgress != null) {
           imported++;
           onProgress(imported / records.length);
         }
       }
-      if (imported > 0) print("Imported rows ($imported records)");
+      if (imported > 0) log("Imported rows ($imported records)");
     } finally {
       await disconnect();
     }
   }
 
   Future changeBalance(String id, int amount) async {
-    if (!(id != null && id.isNotEmpty && amount != null))
+    if (!(id.isNotEmpty)) {
       throw DbExceptions.missingKeyInput;
+    }
 
     try {
       await connect();
@@ -230,12 +234,12 @@ class Db {
           'select id, balance from balance where id = ? and del_sp = "0000-00-00"',
           [id]);
 
-      if (results.length < 1)
+      if (results.isEmpty) {
         throw DbExceptions.noRows;
-      else if (results.length > 1)
+      } else if (results.length > 1) {
         throw DbExceptions.tooManyRows;
-      else if (results.length == 1) {
-        print('Card ID: ${results.first[0]}, balance: ${results.first[1]}');
+      } else if (results.length == 1) {
+        log('Card ID: ${results.first[0]}, balance: ${results.first[1]}');
 
         int origBalance = results.first[1];
         // Less then zero, PAY is NOT allowed
@@ -245,7 +249,7 @@ class Db {
           var result = await _connection.query(
               'update balance set balance = balance + ? where id = ? and del_sp = "0000-00-00"',
               [amount, id]);
-          print("Inserted rows (${result.affectedRows} record) [${[
+          log("Inserted rows (${result.affectedRows} record) [${[
             id,
             amount
           ]}]");

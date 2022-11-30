@@ -4,6 +4,8 @@ import 'package:cashcard/app/app_config.dart';
 import 'package:cashcard/app/app_localizations.dart';
 import 'package:cashcard/app/style.dart';
 import 'package:cashcard/db/db.dart';
+import 'package:cashcard/pages/overview.dart';
+import 'package:cashcard/util/logging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -43,9 +45,7 @@ class AppComponent extends StatefulWidget {
   const AppComponent({super.key});
 
   @override
-  State createState() {
-    return AppComponentState();
-  }
+  AppComponentState createState() => AppComponentState();
 }
 
 class AppComponentState extends State<AppComponent> {
@@ -109,17 +109,20 @@ class AppComponentState extends State<AppComponent> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      builder: (context, child) {
-        return Scaffold(
-          key: _messageScaffoldKey,
-          body: child,
-        );
-      },
+      home: const OverviewPage(),
+      // builder: (context, child) {
+      //   return Scaffold(
+      //     key: _messageScaffoldKey,
+      //     body: const OverviewPage(),
+      //   );
+      // },
       // navigatorObservers: [AppNavigatorObserver()],
       onGenerateTitle: (BuildContext context) =>
           AppLocalization.of(context).translate('title'),
       localeListResolutionCallback: (locales, supportedLocales) {
-        locales!.forEach((l) => print(l.languageCode));
+        for (var l in locales!) {
+          log(l.languageCode);
+        }
         for (var locale in locales) {
           for (var supportedLocale in supportedLocales) {
             if (supportedLocale.languageCode == locale.languageCode &&
@@ -145,7 +148,7 @@ class AppComponentState extends State<AppComponent> {
         Locale('hu', 'HU'),
       ],
       debugShowCheckedModeBanner: false,
-      // theme: blackTheme(),
+      theme: blackTheme(),
       // onGenerateRoute: app.router.generator,
       // initialRoute: Routes.overviewPage,
     );

@@ -1,0 +1,37 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "[sql]": {
+            "editor.formatOnSave": false,
+        },
+        "[xml]": {
+            "editor.formatOnSave": false,
+        },
+        "window.title": "${activeEditorShort}${separator}${folderName}${separator}CashCard",
+        "editor.formatOnSave": true,
+        "files.insertFinalNewline": true,
+        "files.trimFinalNewlines": true,
+        "files.trimTrailingWhitespace": true,
+        "dart.flutterTrackWidgetCreation": true,
+        "dart.flutterRunLogFile": "run_flutter.log",
+        "editor.codeActionsOnSave": {
+            "source.fixAll": true,
+        },
+        "explorer.experimental.fileNesting.enabled": true,
+        "explorer.experimental.fileNesting.expand": false,
+        "explorer.experimental.fileNesting.patterns": {
+            "pubspec.yaml": ".packages, .metadata, pubspec.lock, analysis_options.yaml, .flutter-plugins, .flutter-plugins-dependencies",
+        },
+        // "files.exclude": {
+        // 	"**/*.ast.gql.dart": true,
+        // 	"**/*.req.gql.dart": true,
+        // 	"**/*.data.gql.dart": true,
+        // 	"**/*.var.gql.dart": true,
+        // 	"**/*.gql.g.dart": true
+        // }
+    },
+}
