@@ -100,28 +100,31 @@ class Db {
 
   late MySqlConnection _connection;
 
-  Db(
-      {required this.host,
-      required this.port,
-      required this.userName,
-      required this.password,
-      required this.dbName});
+  Db({
+    required this.host,
+    required this.port,
+    required this.userName,
+    required this.password,
+    required this.dbName,
+  });
 
   Future connect() async {
     _connection = await MySqlConnection.connect(ConnectionSettings(
-        host: host,
-        port: port,
-        user: userName,
-        password: password,
-        db: dbName));
-    // host: 'localhost', port: 3306, user: 'root', password: 'admin', db: 'cashcard'));
+      host: host,
+      port: port,
+      user: userName,
+      password: password,
+      db: dbName,
+    ));
+    // host: 'localhost',
+    // port: 3306,
+    // user: 'root',
+    // password: 'admin',
+    // db: 'cashcard',
+    // ));
   }
 
-  Future disconnect() async {
-    // assert(_connection != null);
-    await _connection.close();
-    // _connection = null;
-  }
+  Future disconnect() => _connection.close();
 
   Future getAll(String searchTerm) async {
     // Query the database using a parameterized query
