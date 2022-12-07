@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:example_flutter/app/app_config.dart';
 import 'package:example_flutter/db/db.dart';
 import 'package:path/path.dart';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -86,8 +87,17 @@ class _OverviewPageState extends State<OverviewPage>
   }
 
   loadDetails(String data) async {
-    if (data.length != 8) {
-      return;
+    if (AppConfig.transformationFrom != null) {
+      final hasMatch = AppConfig.transformationFrom.hasMatch(data);
+
+      if (hasMatch && AppConfig.transformationTo != null)
+        data = data.replaceRegExp(
+            AppConfig.transformationFrom, AppConfig.transformationTo);
+      else if (!hasMatch) {
+        print("$data id is not matching against pattern");
+        showError(tr("invalidID"));
+        return;
+      }
     }
 
     try {
@@ -321,7 +331,7 @@ class _OverviewPageState extends State<OverviewPage>
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
-              Text(tr('amount'), style: TextStyle(fontSize: 40)),
+              Text(tr('amount'), style: TextStyle(fontSize: 35)),
               RawKeyboardListener(
                 focusNode: _propertyFocus,
                 onKey: (event) {

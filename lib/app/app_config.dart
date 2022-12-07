@@ -98,4 +98,35 @@ class AppConfig {
 
   static get language => _config["language"];
   static set language(String language) => _config["language"] = language;
+
+  static RegExp _transformationFrom;
+  static RegExp get transformationFrom {
+    try {
+      if (_transformationFrom == null &&
+          _config.containsKey("transformation") &&
+          (_config["transformation"] as Map<String, dynamic>)
+              .containsKey("from") &&
+          _config["transformation"]["from"] != null) {
+        _transformationFrom = RegExp(_config["transformation"]["from"]);
+      }
+    } on Exception catch (e) {
+      print("Exception: $e");
+    }
+
+    return _transformationFrom;
+  }
+
+  static String _transformationTo;
+  static String get transformationTo {
+    try {
+      if (_transformationTo == null &&
+          _config.containsKey("transformation") &&
+          (_config["transformation"] as Map<String, dynamic>).containsKey("to"))
+        _transformationTo = _config["transformation"]["to"];
+    } on Exception catch (e) {
+      print("Exception: $e");
+    }
+
+    return _transformationTo;
+  }
 }

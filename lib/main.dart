@@ -37,12 +37,12 @@ void createIsolate(SendPort isolateToMainStream) {
   ReceivePort mainToIsolateStream = ReceivePort();
   isolateToMainStream.send(mainToIsolateStream.sendPort);
 
-  SerialPort serialPort;
+  SerialPort _serialPort;
   mainToIsolateStream.listen((data) {
     print('[mainToIsolateStream] $data');
     if (data[0] == IsolateState.INIT) {
       print("Initialize and open serialport");
-      serialPort = SerialPort(
+      _serialPort = SerialPort(
         data[1],
         baudrate: data[2],
         databits: data[3],
@@ -56,7 +56,7 @@ void createIsolate(SendPort isolateToMainStream) {
         ..open();
     } else if (data[0] == IsolateState.EXIT) {
       print("Closing serialport");
-      serialPort.close();
+      _serialPort.close();
     }
   });
 }

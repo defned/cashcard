@@ -2,7 +2,10 @@ MSYS2 (http://mingw-w64.org/doku.php/download)
 http://www.msys2.org/
 http://repo.msys2.org/distrib/x86_64/msys2-x86_64-20190524.exe
 
-Install tools
+# Install tools
+
+- Flutter (Channel master, v1.12.13+hotfix.5, on Microsoft Windows [Version 10.0.19044.2251], locale hu-HU)
+
 pacman -Sy
 pacman -Syu --noconfirm autoconf libtool automake make autoconf-archive pkg-config
 pacman -Syu --noconfirm gettext base-devel mingw-w64-x86_64-gcc
