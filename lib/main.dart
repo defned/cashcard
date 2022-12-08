@@ -3,6 +3,7 @@ import 'dart:isolate';
 
 import 'package:example_flutter/app/app.dart';
 import 'package:example_flutter/app/app_config.dart';
+import 'package:example_flutter/util/logging.dart';
 import 'package:ffi_libserialport/libserialport.dart';
 import 'package:flutter/foundation.dart'
     show debugDefaultTargetPlatformOverride;
@@ -22,7 +23,7 @@ Future<SendPort> initIsolate() async {
       SendPort mainToIsolateStream = data;
       completer.complete(mainToIsolateStream);
     } else {
-      print('[isolateToMainStream] $data');
+      log('[isolateToMainStream] data:${data.toString().trim()}, raw:${data.toString().codeUnits}');
       serialPort.sink.add(data);
     }
   });
@@ -39,7 +40,9 @@ void createIsolate(SendPort isolateToMainStream) {
 
   SerialPort _serialPort;
   mainToIsolateStream.listen((data) {
-    print('[mainToIsolateStream] $data');
+    //NOTE: Different isolate, log is not avaliable
+    print(
+        '[mainToIsolateStream] ${data.toString().trim()} ${data.toString().codeUnits}');
     if (data[0] == IsolateState.INIT) {
       print("Initialize and open serialport");
       _serialPort = SerialPort(
@@ -55,7 +58,7 @@ void createIsolate(SendPort isolateToMainStream) {
         }
         ..open();
     } else if (data[0] == IsolateState.EXIT) {
-      print("Closing serialport");
+      log("Closing serialport");
       _serialPort.close();
     }
   });
@@ -104,5 +107,5 @@ void main() async {
 //       debugConfig: debugOptions, releaseConfig: debugOptions);
 
 //   initLogging();
-//   }, zoneSpecification: ZoneSpecification(print: handlePrint));
+//   }, zoneSpecification: ZoneSpecification(log: handlePrint));
 // }

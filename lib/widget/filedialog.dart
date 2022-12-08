@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:example_flutter/util/extensions.dart';
+import 'package:example_flutter/util/logging.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -115,13 +116,13 @@ class _FileDialogState extends State<FileDialog>
 
   void _onPressed() {
     if (widget.target == FileDialogTarget.DIRECTORY && _lastDirectory != null) {
-      print("Open '${_lastDirectory.path}' directory");
+      log("Open '${_lastDirectory.path}' directory");
       if (widget.onOpen != null) {
         widget.onOpen(_lastDirectory);
       }
     } else if (widget.target == FileDialogTarget.FILE &&
         _lastSelected != null) {
-      print("Open '${_lastSelected.path}' file");
+      log("Open '${_lastSelected.path}' file");
       if (widget.onOpen != null) {
         widget.onOpen(_lastSelected);
       }

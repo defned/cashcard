@@ -93,13 +93,13 @@
 //     for (var i = hasHeader ? 1 : 0; i < lines.length; i++) {
 //       List<String> splitted = lines[i].split(';');
 //       if (splitted.length != header.length) {
-//         print(tr('malformedInput'));
+//         log(tr('malformedInput'));
 //         continue;
 //       }
 
 //       if (splitted[columnIds['ID']].isEmpty ||
 //           splitted[columnIds['NAME']].isEmpty) {
-//         print("Skipped record due to missing or empty property '${[
+//         log("Skipped record due to missing or empty property '${[
 //           splitted[columnIds['ID']],
 //           splitted[columnIds['NAME']]
 //         ]}'");
@@ -289,7 +289,7 @@
 //                               File exportFile = File(join(dir.absolute.path,
 //                                   "export-${DateTime.now().toIso8601String().replaceAll(".", "").replaceAll(":", "").replaceAll("-", "").replaceAll(" ", "")}.csv"));
 //                               exportFile.writeAsStringSync(serializedRecords);
-//                               print(
+//                               log(
 //                                   "Export succeeded to '${exportFile.absolute.path}'");
 //                               await showDialog<void>(
 //                                 barrierDismissible: true,

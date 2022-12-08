@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:example_flutter/app/app_config.dart';
 import 'package:example_flutter/db/db.dart';
+import 'package:example_flutter/util/logging.dart';
 import 'package:path/path.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:example_flutter/app/app.dart';
@@ -53,9 +54,8 @@ class _OverviewPageState extends State<OverviewPage>
   @override
   void initState() {
     super.initState();
-    _subscription = serialPort.stream.listen((onData) {
-      loadDetails(onData);
-    });
+    _subscription =
+        serialPort.stream.map((data) => data.trim()).listen(loadDetails);
   }
 
   @override
@@ -94,7 +94,7 @@ class _OverviewPageState extends State<OverviewPage>
         data = data.replaceRegExp(
             AppConfig.transformationFrom, AppConfig.transformationTo);
       else if (!hasMatch) {
-        print("$data id is not matching against pattern");
+        log("$data id is not matching against pattern");
         showError(tr("invalidID"));
         return;
       }
@@ -202,7 +202,7 @@ class _OverviewPageState extends State<OverviewPage>
         autofocus: true,
         focusNode: _pageFocus,
         onKey: (event) {
-          print(event);
+          log(event);
           if (event is RawKeyDownEvent) {
             // bool isCTRL = Platform.isMacOS
             //     ? event.isMetaPressed
@@ -700,7 +700,7 @@ class _OverviewPageState extends State<OverviewPage>
                   File exportFile = File(join(dir.absolute.path,
                       "export-${DateTime.now().toIso8601String().replaceAll(".", "").replaceAll(":", "").replaceAll("-", "").replaceAll(" ", "")}.csv"));
                   exportFile.writeAsStringSync(serializedRecords);
-                  print("Export succeeded to '${exportFile.absolute.path}'");
+                  log("Export succeeded to '${exportFile.absolute.path}'");
                   showInfo(
                       "${tr('exportAction')} ${tr('succeeded')} ${records.length}/${records.length}");
                 },
@@ -738,12 +738,12 @@ class _OverviewPageState extends State<OverviewPage>
     for (var i = hasHeader ? 1 : 0; i < lines.length; i++) {
       List<String> splitted = lines[i].split(';');
       if (splitted.length != header.length) {
-        print(tr('malformedInput'));
+        log(tr('malformedInput'));
         continue;
       }
 
       if (splitted[columnIds['ID']].isEmpty) {
-        print("Skipped record due to missing or empty property '${[
+        log("Skipped record due to missing or empty property '${[
           splitted[columnIds['ID']]
         ]}'");
         continue;

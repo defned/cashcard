@@ -1,4 +1,5 @@
 import 'package:example_flutter/app/app.dart';
+import 'package:example_flutter/util/logging.dart';
 import 'package:flutter/material.dart';
 import 'package:mysql1/mysql1.dart';
 
@@ -144,7 +145,7 @@ class Db {
       // Insert some data
       var result =
           await _connection.query('insert into balance (id) values (?)', [id]);
-      print("Inserted row (${result.affectedRows} record) ${[id]}");
+      log("Inserted row (${result.affectedRows} record) ${[id]}");
     } finally {
       await disconnect();
     }
@@ -184,7 +185,7 @@ class Db {
       var result = await _connection.query(
           'update balance set del_sp = SYSDATE(), del_sp = SYSDATE() where id in (${List.generate(ids.length, (_) => "?").join(',')}) and del_sp = "0000-00-00"',
           ids);
-      print("Deleted rows (${result.affectedRows} record) $ids");
+      log("Deleted rows (${result.affectedRows} record) $ids");
     } finally {
       await disconnect();
     }
@@ -200,7 +201,7 @@ class Db {
             [
               records[i].id,
             ]);
-        print("Imported row (${result.affectedRows} records) " +
+        log("Imported row (${result.affectedRows} records) " +
             [records[i].id].toString());
 
         if (onProgress != null) {
@@ -208,7 +209,7 @@ class Db {
           onProgress(imported / records.length);
         }
       }
-      if (imported > 0) print("Imported rows ($imported records)");
+      if (imported > 0) log("Imported rows ($imported records)");
     } finally {
       await disconnect();
     }
@@ -230,7 +231,7 @@ class Db {
       else if (results.length > 1)
         throw DbExceptions.tooManyRows;
       else if (results.length == 1) {
-        print('Card ID: ${results.first[0]}, balance: ${results.first[1]}');
+        log('Card ID: ${results.first[0]}, balance: ${results.first[1]}');
 
         int origBalance = results.first[1];
         // Less then zero, PAY is NOT allowed
@@ -240,10 +241,7 @@ class Db {
           var result = await _connection.query(
               'update balance set balance = balance + ? where id = ? and del_sp = "0000-00-00"',
               [amount, id]);
-          print("Inserted rows (${result.affectedRows} record) [${[
-            id,
-            amount
-          ]}]");
+          log("Inserted rows (${result.affectedRows} record) id=$id amount=$amount");
         }
       }
     } finally {

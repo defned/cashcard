@@ -10,8 +10,7 @@ class Routes {
   static void configureRoutes(Router router) {
     router.notFoundHandler = Handler(
         handlerFunc: (BuildContext context, Map<String, List<String>> params) {
-      Logger('config.routes.notFoundHandler')
-          .shout('Route was not found', params);
+      log('Route was not found $params');
       return null;
     });
 

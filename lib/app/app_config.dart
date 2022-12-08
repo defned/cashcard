@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:example_flutter/util/logging.dart';
 import 'package:path/path.dart';
 
 class AppConfig {
+  static File logFile;
   static File _configFile;
   static Map<String, dynamic> _config;
   AppConfig._();
@@ -20,8 +22,8 @@ class AppConfig {
 
     if (!_configFile.existsSync()) {
       try {
-        print("Configuration is not found");
-        print("Create configuration on filesystem at '${_configFile.path}'");
+        log("Configuration is not found");
+        log("Create configuration on filesystem at '${_configFile.path}'");
         _configFile.writeAsStringSync(jsonEncode({
           "db": {
             "host": "localhost",
@@ -33,30 +35,54 @@ class AppConfig {
           "com": {
             "port": "COM4",
             "baudrate": 9600,
-            "stopbits": 0,
+            "stopbits": 1,
             "databits": 8,
             "parity": 0,
             "delay": 100,
           },
-          "language": "en"
+          "language": "hu",
+          "logging": {"filePath": "", "level": "info", "sizeLimit": 25},
+          "language": "hu",
+          "transformation": {"from": "^\\d{5}(.*)", "to": "\$1"}
         }));
       } catch (e) {
-        print("ERROR - ${e.toString()}");
+        log("ERROR - ${e.toString()}");
         throw e;
       }
     }
 
-    print("Load configuration from filesystem from '${_configFile.path}'");
+    log("Load configuration from filesystem from '${_configFile.path}'");
     _config = jsonDecode(_configFile.readAsStringSync());
+
+    // Set up logging
+    if (loggingFilePath != null || loggingSizeLimit != null) {
+      File file = loggingFilePath == null
+          ? File(kLOGFILEPATH)
+          : File(loggingFilePath.isEmpty ? kLOGFILEPATH : loggingFilePath);
+
+      if (!file.existsSync()) file.createSync();
+      logFile = file;
+
+      purgeLog();
+    }
+  }
+
+  static void purgeLog() {
+    if (logFile != null && logFile.existsSync()) {
+      if (loggingSizeLimit != null &&
+          logFile.statSync().size > loggingSizeLimit) {
+        logFile.writeAsStringSync("", mode: FileMode.write);
+      }
+    }
   }
 
   static store() {
-    print("Store configuration on filesystem ...");
+    log("Store configuration on filesystem ...");
     try {
       _configFile.writeAsStringSync(jsonEncode(_config));
-      print("Done");
+      log("Done");
     } catch (e) {
-      print("ERROR - ${e.toString()}");
+      log("ERROR - ${e.toString()}");
       throw e;
     }
   }
@@ -99,6 +125,45 @@ class AppConfig {
   static get language => _config["language"];
   static set language(String language) => _config["language"] = language;
 
+  static T _safeGet<T>(List<String> keyPath) {
+    var configMap = _config;
+
+    for (int i = 0; i < keyPath.length - 1; i++) {
+      if (configMap.containsKey(keyPath[i]) && configMap[keyPath[i]] is Map) {
+        configMap = configMap[keyPath[i]];
+      } else
+        return null;
+    }
+
+    if (configMap.containsKey(keyPath.last)) return configMap[keyPath.last];
+
+    return null;
+  }
+
+  static const String kLOGFILEPATH = "log.txt";
+
+  static String get loggingFilePath {
+    String filePath = _safeGet(["logging", "filePath"]);
+    String path =
+        filePath != null && filePath.isNotEmpty ? filePath : kLOGFILEPATH;
+
+    if (Platform.isWindows) {
+      return File(join(File(Platform.resolvedExecutable).parent.path, path))
+          .absolute
+          .path;
+    } else if (Platform.isMacOS) {
+      return File(join(Directory("~").absolute.parent.path, path))
+          .absolute
+          .path;
+    } else
+      throw "Not supported platform";
+  }
+
+  static int get loggingSizeLimit {
+    final _limit = _safeGet(["logging", "sizeLimit"]) ?? 25;
+    return _limit * 1024 * 1024;
+  }
+
   static RegExp _transformationFrom;
   static RegExp get transformationFrom {
     try {
@@ -110,7 +175,7 @@ class AppConfig {
         _transformationFrom = RegExp(_config["transformation"]["from"]);
       }
     } on Exception catch (e) {
-      print("Exception: $e");
+      log("Exception: $e");
     }
 
     return _transformationFrom;
@@ -124,7 +189,7 @@ class AppConfig {
           (_config["transformation"] as Map<String, dynamic>).containsKey("to"))
         _transformationTo = _config["transformation"]["to"];
     } on Exception catch (e) {
-      print("Exception: $e");
+      log("Exception: $e");
     }
 
     return _transformationTo;

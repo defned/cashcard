@@ -5,6 +5,7 @@ import 'package:example_flutter/app/app_localizations.dart';
 import 'package:example_flutter/app/routes.dart';
 import 'package:example_flutter/app/style.dart';
 import 'package:example_flutter/db/db.dart';
+import 'package:example_flutter/util/logging.dart';
 import 'package:example_flutter/util/snackbarmessage.dart';
 import 'package:example_flutter/widget/capsulebutton.dart';
 import 'package:fluro/fluro.dart';
@@ -124,7 +125,7 @@ class AppComponentState extends State<AppComponent> {
       onGenerateTitle: (BuildContext context) =>
           AppLocalization.of(context).translate('title'),
       localeListResolutionCallback: (locales, supportedLocales) {
-        locales.forEach((l) => print(l.languageCode));
+        locales.forEach((l) => log(l.languageCode));
         for (var locale in locales) {
           for (var supportedLocale in supportedLocales) {
             if (supportedLocale.languageCode == locale.languageCode &&

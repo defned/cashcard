@@ -5,6 +5,7 @@ import 'package:example_flutter/app/style.dart';
 import 'package:example_flutter/db/db.dart';
 import 'package:example_flutter/main.dart';
 import 'package:example_flutter/util/extensions.dart';
+import 'package:example_flutter/util/logging.dart';
 import 'package:example_flutter/widget/subpage.dart';
 import 'package:ffi_libserialport/libserialport.dart';
 import 'package:flutter/material.dart';
@@ -103,7 +104,7 @@ class _SettingsPageState extends State<SettingsPage>
     try {
       availablePorts = SerialPort.getAvailablePorts();
     } on Exception catch (e) {
-      print(e);
+      log(e);
     }
   }
 
@@ -367,7 +368,7 @@ class _SettingsPageState extends State<SettingsPage>
                               AppConfig.comDelay,
                             ]);
                             AppConfig.store();
-                            print("Serialport connection refresh succeeded");
+                            log("Serialport connection refresh succeeded");
                             Scaffold.of(context).showSnackBar(SnackBar(
                                 backgroundColor: AppColors.ok,
                                 content: Text(
@@ -477,13 +478,13 @@ class _SettingsPageState extends State<SettingsPage>
                       AppConfig.dbUserName = dbUserName;
                       AppConfig.dbPassword = dbPassword;
                       AppConfig.store();
-                      print("Db connection refresh succeeded");
+                      log("Db connection refresh succeeded");
                       Scaffold.of(context).showSnackBar(SnackBar(
                           backgroundColor: AppColors.ok,
                           content: Text(
                               "${tr('database')} ${tr('refresh').toLowerCase()} ${tr('succeeded')}")));
                     } catch (e) {
-                      print("Db connection refresh failed");
+                      log("Db connection refresh failed");
                       Scaffold.of(context).showSnackBar(SnackBar(
                           backgroundColor: AppColors.error,
                           content: Text(
