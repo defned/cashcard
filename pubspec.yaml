@@ -23,12 +23,12 @@ dependencies:
   virtual_keyboard: 0.1.4
   # flutter_serial_port: ^0.0.7
   ffi_libserialport:
-    path: ../ffi_libserialport
-  #   git:
-  #     url: https://github.com/defned/ffi_libserialport.git
-  #     ref: 40c358b09bca080f6d69d0f7bc50e242b7f1192d
+    # path: ../ffi_libserialport
+    git:
+      url: https://github.com/defned/ffi_libserialport.git
+      ref: 40c358b09bca080f6d69d0f7bc50e242b7f1192d
   auto_size_text: any
-  fluro: any
+  fluro: 1.6.2
   logging: any
   cupertino_icons: ^0.1.0
 
