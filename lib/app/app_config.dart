@@ -40,7 +40,6 @@ class AppConfig {
             "parity": 0,
             "delay": 100,
           },
-          "language": "hu",
           "logging": {"filePath": "", "level": "info", "sizeLimit": 25},
           "language": "hu",
           "transformation": {"from": "^\\d{5}(.*)", "to": "\$1"}

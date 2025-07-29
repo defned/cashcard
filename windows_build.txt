@@ -8,7 +8,7 @@ http://repo.msys2.org/distrib/x86_64/msys2-x86_64-20190524.exe
         (https://storage.googleapis.com/flutter_infra_release/releases/beta/windows/flutter_windows_v1.12.13+hotfix.5-beta.zip)
 - VS Code Flutter ext (3.9.0), Dart ext (3.9.0)
 - Visual Studio 2019 (https://archive.org/download/vs_community__e8aae2bc1239469a8cb34a7eeb742747/vs_community_2019.exe)
-- MariaDB (https://dlm.mariadb.com/4283563/MariaDB/mariadb-11.8.2/winx64-packages/mariadb-11.8.2-winx64.msi)
+- MariaDB (https://archive.mariadb.org/mariadb-10.4.34/winx64-packages/mariadb-10.4.34-winx64.msi)
 - HeidiSQL (https://www.heidisql.com/downloads/installers/HeidiSQL_12.11.0.7065_Setup.exe)
 
 pacman -Sy
