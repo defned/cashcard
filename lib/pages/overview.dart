@@ -4,9 +4,11 @@ import 'dart:io';
 import 'package:example_flutter/app/app_config.dart';
 import 'package:example_flutter/db/db.dart';
 import 'package:example_flutter/util/logging.dart';
+import 'package:example_flutter/widget/expandable.dart';
 import 'package:path/path.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:example_flutter/app/app.dart';
+import 'package:example_flutter/widget/products.dart';
 import 'package:example_flutter/app/style.dart';
 import 'package:example_flutter/main.dart';
 import 'package:example_flutter/util/extensions.dart';
@@ -51,11 +53,14 @@ class _OverviewPageState extends State<OverviewPage>
 
   bool isBusy = false;
 
+  Future<List<DbRecordProduct>> _dbProducts = Future.value([]);
+
   @override
   void initState() {
     super.initState();
     _subscription =
         serialPort.stream.map((data) => data.trim()).listen(loadDetails);
+    _dbProducts = app.db.getProductAll("");
   }
 
   @override
@@ -101,7 +106,7 @@ class _OverviewPageState extends State<OverviewPage>
     }
 
     try {
-      DbRecord record = await app.db.get(data);
+      DbRecordBalance record = await app.db.getBalance(data);
       resetFields();
       _cardIdFieldController.text = data;
       _balanceFieldController.text = "${record.balance} Ft";
@@ -113,7 +118,7 @@ class _OverviewPageState extends State<OverviewPage>
           resetFields();
         }
 
-        DbRecord record = await app.db.get(data);
+        DbRecordBalance record = await app.db.getBalance(data);
 
         _cardIdFieldController.text = data;
         _balanceFieldController.text = "${record.balance} Ft";
@@ -187,15 +192,21 @@ class _OverviewPageState extends State<OverviewPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          tr('title'),
-          style: TextStyle(fontSize: 20),
+        title: Row(
+          children: <Widget>[
+            Text(
+              tr('title'),
+              style: TextStyle(fontSize: 20),
+            ),
+            Expanded(child: createInfoFields()),
+          ],
         ),
         actions: <Widget>[
           IconButton(
-              tooltip: tr("aboutTooltip"),
-              icon: Icon(Icons.info_outline),
-              onPressed: showAbout)
+            tooltip: tr("aboutTooltip"),
+            icon: Icon(Icons.info_outline),
+            onPressed: showAbout,
+          )
         ],
       ),
       body: RawKeyboardListener(
@@ -231,107 +242,152 @@ class _OverviewPageState extends State<OverviewPage>
             // }
           }
         },
-        child: Center(
-          child: Container(
-            constraints: BoxConstraints(maxWidth: 1000),
-            padding: const EdgeInsets.symmetric(horizontal: 50.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                createInputs(),
-                createButtons(),
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
+                child: FutureBuilder<List<DbRecordProduct>>(
+                  initialData: [],
+                  future: _dbProducts,
+                  builder: (context, state) => Products(
+                    products: state.data,
+                    onTap: (DbRecordProduct p) {
+                      log("Clicked to the $p");
+                      setValue(p.priceHuf);
+                    },
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 15),
+            Expandable(
+              leading: const Icon(Icons.keyboard, size: 55),
+              // initiallyExpanded: true,
+              title: Row(children: <Widget>[
+                const SizedBox(width: 15),
+                createBalanceInput(),
+                const SizedBox(width: 30),
+                Container(
+                  constraints: BoxConstraints(maxWidth: 500),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.max,
+                        children: <Widget>[
+                          createButton(tr('topUp'), onTap: topUp),
+                          const SizedBox(width: 10),
+                          createButton(tr('pay'), onTap: pay),
+                          const SizedBox(width: 15),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ]),
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    createButtons(),
+                    const SizedBox(width: 15),
+                  ],
+                ),
               ],
             ),
-          ),
+            const SizedBox(height: 15),
+          ],
         ),
       ),
     );
   }
 
-  Widget createInputs() {
+  Widget createInfoFields() {
+    return Row(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        const SizedBox(width: 10),
+        AutoSizeText(tr('cardId'),
+            minFontSize: 15, style: TextStyle(fontSize: 25)),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 200,
+          child: TextFormField(
+            enabled: false,
+            focusNode: cardIdFocus,
+            cursorColor: Colors.transparent,
+            enableSuggestions: false,
+            autocorrect: false,
+            decoration: InputDecoration(
+              disabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              enabledBorder: InputBorder.none,
+            ),
+            textAlign: TextAlign.left,
+            style: TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+              color: AppColors.accent,
+            ),
+            key: _cardIdFieldKey,
+            controller: _cardIdFieldController,
+          ),
+        ),
+        // NOTE: Only for test purposes
+        // IconButton(
+        //   iconSize: 35,
+        //   onPressed: () {
+        //     _cardIdFieldController.text = "12312312";
+        //     loadDetails(_cardIdFieldController.text);
+        //   },
+        //   icon: Icon(Icons.input),
+        // ),
+        const SizedBox(width: 10),
+        AutoSizeText(tr('balance'),
+            minFontSize: 15, style: TextStyle(fontSize: 25)),
+        SizedBox(width: 10),
+        SizedBox(
+          width: 200,
+          child: TextFormField(
+            enabled: false,
+            decoration: InputDecoration(
+                disabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                enabledBorder: InputBorder.none),
+            // focusNode: cardIdFocus,
+            cursorColor: Colors.transparent,
+            enableSuggestions: false,
+            autofocus: true,
+            autocorrect: false,
+            textAlign: TextAlign.left,
+            style: TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+              color: AppColors.accent,
+            ),
+            controller: _balanceFieldController,
+          ),
+        ),
+        const SizedBox(width: 10),
+      ],
+    );
+  }
+
+  Widget createBalanceInput() {
     return Expanded(
       child: Column(
         children: <Widget>[
-          Row(mainAxisSize: MainAxisSize.max, children: <Widget>[
-            Expanded(
-              child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-                AutoSizeText(tr('cardId'),
-                    minFontSize: 25, style: TextStyle(fontSize: 35)),
-                TextFormField(
-                  enabled: false,
-                  focusNode: cardIdFocus,
-                  cursorColor: Colors.transparent,
-                  enableSuggestions: false,
-                  autocorrect: false,
-                  // autofocus: true,
-                  // autovalidate: true,
-                  decoration: InputDecoration(
-                    disabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                  ),
-                  // validator: (value) {
-                  //   refresh(() => _validId = value.isNotEmpty);
-                  //   return null;
-                  // },
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.brightText),
-                  key: _cardIdFieldKey,
-                  controller: _cardIdFieldController,
-                ),
-              ]),
-            ),
-            // NOTE: Only for test purposes
-            // IconButton(
-            //   iconSize: 35,
-            //   onPressed: () {
-            //     _cardIdFieldController.text = "12312312";
-            //     loadDetails(_cardIdFieldController.text);
-            //   },
-            //   icon: Icon(Icons.input),
-            // ),
-            SizedBox(width: 30),
-            Expanded(
-              child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-                AutoSizeText(tr('balance'),
-                    minFontSize: 25, style: TextStyle(fontSize: 35)),
-                TextFormField(
-                  enabled: false,
-                  decoration: InputDecoration(
-                    disabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                  ),
-                  // focusNode: cardIdFocus,
-                  cursorColor: Colors.transparent,
-                  enableSuggestions: false,
-                  autofocus: true,
-                  autocorrect: false,
-                  // autovalidate: true,
-                  // validator: (value) {
-                  //   refresh(() => _validId = value.isNotEmpty);
-                  //   return null;
-                  // },
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.brightText),
-                  controller: _balanceFieldController,
-                ),
-              ]),
-            ),
-          ]),
+          const SizedBox(height: 15),
           Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
-              Text(tr('amount'), style: TextStyle(fontSize: 35)),
+              Text(tr('amount'), style: TextStyle(fontSize: 30)),
               RawKeyboardListener(
                 focusNode: _propertyFocus,
                 onKey: (event) {
@@ -359,7 +415,7 @@ class _OverviewPageState extends State<OverviewPage>
                       controller: _propertyFieldController,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 60,
+                        fontSize: 50,
                         fontWeight: FontWeight.bold,
                         color: AppColors.accent,
                       ),
@@ -432,25 +488,17 @@ class _OverviewPageState extends State<OverviewPage>
 
   Widget createButtons() {
     return Container(
-      constraints: BoxConstraints(minHeight: 400),
+      constraints: BoxConstraints(maxWidth: 485),
       child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-        SizedBox(height: 10),
-        Container(
-          height: 100,
-          constraints: BoxConstraints(maxWidth: 800),
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            children: <Widget>[
-              createButton(tr('topUp'), onTap: () {
-                topUp();
-              }),
-              createButton(tr('pay'), onTap: () {
-                pay();
-              }),
-            ],
-          ),
-        ),
-        SizedBox(height: 10),
+        // Row(
+        //   mainAxisSize: MainAxisSize.max,
+        //   children: <Widget>[
+        //     createButton(tr('topUp'), onTap: topUp),
+        //     const SizedBox(width: 10),
+        //     createButton(tr('pay'), onTap: pay),
+        //   ],
+        // ),
+        // SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
               color: Colors.black,
@@ -459,29 +507,36 @@ class _OverviewPageState extends State<OverviewPage>
                 width: 3,
                 color: AppColors.brightText,
               )),
-          constraints: BoxConstraints(maxWidth: 600),
-          child: VirtualKeyboard(
-              fontSize: 45,
-              textColor: AppColors.brightText,
-              height: 250,
-              type: VirtualKeyboardType.Numeric,
-              onKeyPress: _onKeyPress),
+          child: Column(
+            children: <Widget>[
+              SizedBox(height: 20),
+              VirtualKeyboard(
+                  fontSize: 30,
+                  textColor: AppColors.brightText,
+                  height: 200,
+                  type: VirtualKeyboardType.Numeric,
+                  onKeyPress: _onKeyPress),
+              SizedBox(height: 20),
+            ],
+          ),
         ),
-        SizedBox(height: 30)
       ]),
     );
+  }
+
+  void setValue(int value) {
+    // Update the screen
+    TextEditingController ctrl = _propertyFieldController;
+    ctrl.text = value.toString();
+    setState(() {
+      if (ctrl == _propertyFieldController) {}
+    });
   }
 
   /// Fired when the virtual keyboard key is pressed.
   _onKeyPress(VirtualKeyboardKey key) {
     TextEditingController ctrl;
-
-    // if (cardIdFocus.hasFocus) {
-    //   ctrl = _cardIdFieldController;
-    // } else if (propertyFocus.hasFocus) {
     ctrl = _propertyFieldController;
-    // } else
-    //   return;
 
     if (key.keyType == VirtualKeyboardKeyType.String) {
       ctrl.text = ctrl.text + (shiftEnabled ? key.capsText : key.text);
@@ -514,35 +569,31 @@ class _OverviewPageState extends State<OverviewPage>
   }
 
   bool isButtonsActive = true;
-  Widget createButton(String s, {Null Function() onTap}) {
+  Widget createButton(String s, {void Function() onTap}) {
     return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
-        child: RawMaterialButton(
-          onPressed: isButtonsActive ? onTap : null,
-          child: Container(
-            decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(radius()),
-                border: Border.all(
-                  width: 3,
+      child: RawMaterialButton(
+        onPressed: isButtonsActive ? onTap : null,
+        child: Container(
+          decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(radius()),
+              border: Border.all(
+                width: 3,
+                color: isButtonsActive
+                    ? AppColors.brightText
+                    : AppColors.disabledColor,
+              )),
+          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 15.0),
+          child: Center(
+            child: AutoSizeText(s,
+                style: TextStyle(
+                  fontSize: 35,
                   color: isButtonsActive
                       ? AppColors.brightText
                       : AppColors.disabledColor,
-                )),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 30.0, vertical: 15.0),
-            child: Center(
-              child: AutoSizeText(s,
-                  style: TextStyle(
-                    fontSize: 45,
-                    color: isButtonsActive
-                        ? AppColors.brightText
-                        : AppColors.disabledColor,
-                  ),
-                  maxLines: 1,
-                  group: group),
-            ),
+                ),
+                maxLines: 1,
+                group: group),
           ),
         ),
       ),
@@ -658,10 +709,10 @@ class _OverviewPageState extends State<OverviewPage>
               child: FileDialog(
                 title: tr('importAction'),
                 onOpen: (fs) async {
-                  List<DbRecord> records = [];
+                  List<DbRecordBalance> records = [];
                   try {
                     records = serializeRecordsFromCSV(fs);
-                    await app.db.import(records);
+                    await app.db.insertBalances(records);
                     showInfo(
                         "${tr('importAction')} ${tr('succeeded')} ${records.length}/${records.length}");
                   } catch (e) {
@@ -694,7 +745,8 @@ class _OverviewPageState extends State<OverviewPage>
                 title: tr('exportAction'),
                 target: FileDialogTarget.DIRECTORY,
                 onOpen: (dir) async {
-                  List<DbRecord> records = _dbRecordsDataSource.getRecords();
+                  List<DbRecordBalance> records =
+                      _dbRecordsDataSource.getBalanceRecords();
                   String serializedRecords =
                       serializeRecordsIntoCSV(records).join("\n");
                   File exportFile = File(join(dir.absolute.path,
@@ -712,14 +764,13 @@ class _OverviewPageState extends State<OverviewPage>
     );
   }
 
-  List<DbRecord> serializeRecordsFromCSV(FileSystemEntity fs) {
+  List<DbRecordBalance> serializeRecordsFromCSV(FileSystemEntity fs) {
     if (fs is! File) throw tr('invalidImportSource');
 
     List<String> lines = (fs as File).readAsLinesSync();
     String firstLine = lines.first.toUpperCase();
     Map<String, int> columnIds = {
       'ID': 0,
-      'NAME': 0,
       'BALANCE': 0,
     };
     if (!firstLine.contains(';')) throw tr('invalidImportFormat');
@@ -727,14 +778,13 @@ class _OverviewPageState extends State<OverviewPage>
     // Remapping indexes if needed
     List<String> header = firstLine.split(';');
     bool hasHeader = false;
-    if (firstLine.contains('ID') || firstLine.contains('NAME')) {
+    if (firstLine.contains('ID')) {
       columnIds['ID'] = header.indexOf('ID');
-      columnIds['NAME'] = header.indexOf('NAME');
       columnIds['BALANCE'] = header.indexOf('BALANCE');
       hasHeader = true;
     }
 
-    List<DbRecord> res = [];
+    List<DbRecordBalance> res = [];
     for (var i = hasHeader ? 1 : 0; i < lines.length; i++) {
       List<String> splitted = lines[i].split(';');
       if (splitted.length != header.length) {
@@ -749,7 +799,7 @@ class _OverviewPageState extends State<OverviewPage>
         continue;
       }
 
-      res.add(DbRecord(
+      res.add(DbRecordBalance(
         splitted[columnIds['ID']],
         columnIds['BALANCE'] == -1
             ? null
@@ -760,7 +810,7 @@ class _OverviewPageState extends State<OverviewPage>
     return res;
   }
 
-  List<String> serializeRecordsIntoCSV(List<DbRecord> records) {
+  List<String> serializeRecordsIntoCSV(List<DbRecordBalance> records) {
     const String SEP = ";";
 
     List<String> res = ['ID${SEP}BALANCE$SEP'];

@@ -42,7 +42,7 @@ class AppConfig {
           },
           "logging": {"filePath": "", "level": "info", "sizeLimit": 25},
           "language": "hu",
-          "transformation": {"from": "^\\d{5}(.*)", "to": "\$1"}
+          "transformation": {"from": "^\\d{4}(.*)", "to": "\$1"}
         }));
       } catch (e) {
         log("ERROR - ${e.toString()}");

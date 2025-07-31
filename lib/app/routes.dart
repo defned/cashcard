@@ -18,10 +18,5 @@ class Routes {
         handlerFunc: (BuildContext context, Map<String, List<String>> params) {
       return OverviewPage();
     }));
-
-    // router.define(registrationPage, handler: Handler(
-    //     handlerFunc: (BuildContext context, Map<String, List<String>> params) {
-    //   return RegistrationPage();
-    // }));
   }
 }

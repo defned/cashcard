@@ -1,28 +1,19 @@
-import 'dart:async';
-
 import 'package:example_flutter/app/app_config.dart';
 import 'package:example_flutter/app/app_localizations.dart';
 import 'package:example_flutter/app/routes.dart';
 import 'package:example_flutter/app/style.dart';
 import 'package:example_flutter/db/db.dart';
 import 'package:example_flutter/util/logging.dart';
-import 'package:example_flutter/util/snackbarmessage.dart';
-import 'package:example_flutter/widget/capsulebutton.dart';
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:logging/logging.dart';
 
 class Application extends WidgetsBindingObserver {
-  StreamController<SnackBarMessage> messageController =
-      StreamController<SnackBarMessage>();
-  Stream<SnackBarMessage> syncMessages;
   final Router router = Router();
   Db db;
 
   Application() {
-    syncMessages = messageController.stream;
-
     AppConfig.init();
 
     db = Db(
@@ -53,8 +44,6 @@ class AppComponent extends StatefulWidget {
 }
 
 class AppComponentState extends State<AppComponent> {
-  StreamSubscription _sub;
-  StreamSubscription _messageSubscription;
   final _messageScaffoldKey = GlobalKey<ScaffoldState>();
 
   AppComponentState() {
@@ -65,49 +54,10 @@ class AppComponentState extends State<AppComponent> {
   initState() {
     super.initState();
     app.init();
-    _messageSubscription = app.syncMessages.listen((message) {
-      if (message is SnackBarMessage) {
-        _messageScaffoldKey.currentState.showSnackBar(SnackBar(
-          content: Row(
-            children: <Widget>[
-              Expanded(
-                  child: Text(message.message,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontWeight: FontWeight.w700))),
-              if (message.action != null)
-                CapsuleButton(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text(
-                      message.actionMessage,
-                      style: TextStyle(
-                          color: message.type == SnackBarType.error
-                              ? Colors.red.withOpacity(0.95)
-                              : Colors.black.withOpacity(0.8),
-                          fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                  color: Colors.white,
-                  onTap: () {
-                    _messageScaffoldKey.currentState.hideCurrentSnackBar();
-                    message.action();
-                  },
-                )
-            ],
-          ),
-          backgroundColor: message.type == SnackBarType.error
-              ? Colors.red.withOpacity(0.95)
-              : Colors.black.withOpacity(0.8),
-          duration: message.duration,
-        ));
-      }
-    });
   }
 
   @override
   dispose() {
-    _sub.cancel();
-    _messageSubscription.cancel();
     app.dipose();
     super.dispose();
   }

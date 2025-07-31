@@ -86,26 +86,3 @@ void main() async {
 
   runApp(AppComponent());
 }
-
-// void main() {
-//   // See https://github.com/flutter/flutter/wiki/Desktop-shells#target-platform-override
-//   debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
-
-//   WidgetsFlutterBinding.ensureInitialized();
-//   runZoned(() {
-//     initLogging();
-//     // BlocSupervisor.delegate = EflyrBlocDelegate();
-
-//     CatcherOptions debugOptions = CatcherOptions(
-//       // FullPageReportMode(),
-//       SilentReportMode(),
-//       [ConsoleHandler(), SendEventHandler()]);
-
-//   disableLogging();
-
-//   Catcher(AppComponent(),
-//       debugConfig: debugOptions, releaseConfig: debugOptions);
-
-//   initLogging();
-//   }, zoneSpecification: ZoneSpecification(log: handlePrint));
-// }

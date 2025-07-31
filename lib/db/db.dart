@@ -3,20 +3,22 @@ import 'package:example_flutter/util/logging.dart';
 import 'package:flutter/material.dart';
 import 'package:mysql1/mysql1.dart';
 
-class DbRecordDataSource extends DataTableSource {
-  List<DbRecord> _dbRecords = [];
-  List<DbRecord> getRecords() => _dbRecords;
+class DbRecordDataSource extends ChangeNotifier {
+  List<DbRecordBalance> _dbBalanceRecords = [];
+  List<DbRecordBalance> getBalanceRecords() => _dbBalanceRecords;
+  List<DbRecordProduct> _dbProductRecords = [];
+  List<DbRecordProduct> getProductRecords() => _dbProductRecords;
 
   void init(String searchTerm) async {
-    _selectedCount = 0;
-    _dbRecords = await app.db.getAll(searchTerm);
+    _dbBalanceRecords = await app.db.getBalanceAll(searchTerm);
+    _dbProductRecords = await app.db.getProductAll(searchTerm);
     notifyListeners();
   }
 
-  void sort<T>(Comparable<T> getField(DbRecord d), bool ascending) {
-    _dbRecords.sort((DbRecord a, DbRecord b) {
+  void sort<T>(Comparable<T> getField(DbRecordBalance d), bool ascending) {
+    _dbBalanceRecords.sort((DbRecordBalance a, DbRecordBalance b) {
       if (!ascending) {
-        final DbRecord c = a;
+        final DbRecordBalance c = a;
         a = b;
         b = c;
       }
@@ -24,48 +26,6 @@ class DbRecordDataSource extends DataTableSource {
       final Comparable<T> bValue = getField(b);
       return Comparable.compare(aValue, bValue);
     });
-    notifyListeners();
-  }
-
-  int _selectedCount = 0;
-
-  @override
-  DataRow getRow(int index) {
-    assert(index >= 0);
-    if (index >= _dbRecords.length) return null;
-    final DbRecord dbRecord = _dbRecords[index];
-    return DataRow.byIndex(
-      index: index,
-      selected: dbRecord.selected,
-      onSelectChanged: (bool value) {
-        if (dbRecord.selected != value) {
-          _selectedCount += value ? 1 : -1;
-          assert(_selectedCount >= 0);
-          dbRecord.selected = value;
-          notifyListeners();
-        }
-      },
-      cells: <DataCell>[
-        DataCell(Text('${dbRecord.id}',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-        DataCell(Text('${dbRecord.balance} HUF',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-      ],
-    );
-  }
-
-  @override
-  int get rowCount => _dbRecords.length;
-
-  @override
-  bool get isRowCountApproximate => false;
-
-  @override
-  int get selectedRowCount => _selectedCount;
-
-  void selectAll(bool checked) {
-    for (DbRecord dessert in _dbRecords) dessert.selected = checked;
-    _selectedCount = checked ? _dbRecords.length : 0;
     notifyListeners();
   }
 }
@@ -80,14 +40,49 @@ enum DbExceptions {
   unknown
 }
 
-class DbRecord {
-  DbRecord(this.id, this.balance);
+class DbRecordBalance {
+  DbRecordBalance(this.id, this.balance);
 
   String id;
   int balance;
 
   bool selected = false;
 }
+
+class DbRecordProduct {
+  DbRecordProduct(
+    this.id,
+    this.name,
+    this.priceHuf,
+    this.favourite,
+  );
+
+  int id;
+  String name;
+  int priceHuf;
+  bool favourite = false;
+
+  @override
+  String toString() => "$id;$name;$priceHuf;${favourite ? 1 : 0};";
+}
+
+// class DbRecordSales {
+//   DbRecordSales(
+//     this.id,
+//     this.balanceId,
+//     this.productId,
+//     this.productName,
+//     this.productPriceHuf,
+//     this.productFavourite,
+//   );
+
+//   String id;
+//   String balanceId;
+//   String productId;
+//   String productName;
+//   int productPriceHuf;
+//   bool productFavourite = false;
+// }
 
 class Db {
   final String host;
@@ -108,7 +103,6 @@ class Db {
         user: userName,
         password: password,
         db: dbName));
-    // host: 'localhost', port: 3306, user: 'root', password: 'admin', db: 'cashcard'));
   }
 
   Future disconnect() async {
@@ -117,16 +111,36 @@ class Db {
     _connection = null;
   }
 
-  Future getAll(String searchTerm) async {
-    // Query the database using a parameterized query
-    List<DbRecord> res = [];
+  Future<List<DbRecordBalance>> getBalanceAll(String searchTerm) async {
+    List<DbRecordBalance> res = [];
     try {
       await connect();
       var results = await _connection.query(
           'select id, balance from balance where (id like ?) and del_sp = "0000-00-00"',
           ['%$searchTerm%']);
       for (int i = 0; i < results.length; i++)
-        res.add(DbRecord(results.elementAt(i)[0], results.elementAt(i)[1]));
+        res.add(
+            DbRecordBalance(results.elementAt(i)[0], results.elementAt(i)[1]));
+    } finally {
+      await disconnect();
+    }
+    return res;
+  }
+
+  Future<List<DbRecordProduct>> getProductAll(String searchTerm) async {
+    List<DbRecordProduct> res = [];
+    try {
+      await connect();
+      var results = await _connection.query(
+          'select id, name, price_huf, favourite from product where (name like ?) and del_sp = "0000-00-00"',
+          ['%$searchTerm%']);
+      for (int i = 0; i < results.length; i++)
+        res.add(DbRecordProduct(
+          results.elementAt(i)[0],
+          results.elementAt(i)[1],
+          results.elementAt(i)[2],
+          (results.elementAt(i)[3] == 1) ? true : false,
+        ));
     } finally {
       await disconnect();
     }
@@ -151,7 +165,7 @@ class Db {
     }
   }
 
-  Future<DbRecord> get(String id) async {
+  Future<DbRecordBalance> getBalance(String id) async {
     try {
       await connect();
       // Query the database using a parameterized query
@@ -162,7 +176,7 @@ class Db {
       if (results.length < 1)
         throw DbExceptions.noRows;
       else if (results.length > 1) throw DbExceptions.tooManyRows;
-      return DbRecord(results.first[0], results.first[1]);
+      return DbRecordBalance(results.first[0], results.first[1]);
     } finally {
       await disconnect();
     }
@@ -175,32 +189,18 @@ class Db {
 
   Future topUp(String id, int amount) {
     if (!(amount != null && amount > 0)) throw DbExceptions.missingValueInput;
-
     return changeBalance(id, amount);
   }
 
-  Future delete(List<String> ids) async {
-    try {
-      await connect();
-      var result = await _connection.query(
-          'update balance set del_sp = SYSDATE(), del_sp = SYSDATE() where id in (${List.generate(ids.length, (_) => "?").join(',')}) and del_sp = "0000-00-00"',
-          ids);
-      log("Deleted rows (${result.affectedRows} record) $ids");
-    } finally {
-      await disconnect();
-    }
-  }
-
-  Future import(List<DbRecord> records, {Function(double) onProgress}) async {
+  Future insertBalances(List<DbRecordBalance> records,
+      {Function(double) onProgress}) async {
     try {
       await connect();
       int imported = 0;
       for (int i = 0; i < records.length; i++) {
         var result = await _connection.query(
             'insert into balance (id) values (?) ON DUPLICATE KEY UPDATE balance = 0',
-            [
-              records[i].id,
-            ]);
+            [records[i].id]);
         log("Imported row (${result.affectedRows} records) " +
             [records[i].id].toString());
 

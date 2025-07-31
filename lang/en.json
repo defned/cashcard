@@ -78,7 +78,7 @@
     "authorEmail": "belakovics.akos@gmail.com",
     "about": "The CashCard application was made and compiled by love.",
     "version": "Version",
-    "versionNumber": "0.0.4-beta",
+    "versionNumber": "0.0.5",
     " - Validation messages - ": "-----------------------------",
     "mustBePositive": "Amount must be positive",
     "notNumber": "Not a number",
