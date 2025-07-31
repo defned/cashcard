@@ -1,4 +1,4 @@
-import 'package:example_flutter/app/app_localizations.dart';
+import 'package:cashcard/app/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 mixin StateWithLocalization<T extends StatefulWidget> on State<T> {

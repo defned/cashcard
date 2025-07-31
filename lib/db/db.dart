@@ -1,5 +1,5 @@
-import 'package:example_flutter/app/app.dart';
-import 'package:example_flutter/util/logging.dart';
+import 'package:cashcard/app/app.dart';
+import 'package:cashcard/util/logging.dart';
 import 'package:flutter/material.dart';
 import 'package:mysql1/mysql1.dart';
 

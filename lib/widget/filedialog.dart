@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:example_flutter/util/extensions.dart';
-import 'package:example_flutter/util/logging.dart';
+import 'package:cashcard/util/extensions.dart';
+import 'package:cashcard/util/logging.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 

@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:isolate';
 
-import 'package:example_flutter/app/app.dart';
-import 'package:example_flutter/app/app_config.dart';
-import 'package:example_flutter/util/logging.dart';
+import 'package:cashcard/app/app.dart';
+import 'package:cashcard/app/app_config.dart';
+import 'package:cashcard/util/logging.dart';
 import 'package:ffi_libserialport/libserialport.dart';
 import 'package:flutter/foundation.dart'
     show debugDefaultTargetPlatformOverride;

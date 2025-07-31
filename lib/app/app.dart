@@ -1,9 +1,9 @@
-import 'package:example_flutter/app/app_config.dart';
-import 'package:example_flutter/app/app_localizations.dart';
-import 'package:example_flutter/app/routes.dart';
-import 'package:example_flutter/app/style.dart';
-import 'package:example_flutter/db/db.dart';
-import 'package:example_flutter/util/logging.dart';
+import 'package:cashcard/app/app_config.dart';
+import 'package:cashcard/app/app_localizations.dart';
+import 'package:cashcard/app/routes.dart';
+import 'package:cashcard/app/style.dart';
+import 'package:cashcard/db/db.dart';
+import 'package:cashcard/util/logging.dart';
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';

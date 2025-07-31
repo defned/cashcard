@@ -1,5 +1,5 @@
-import 'package:example_flutter/pages/overview.dart';
-import 'package:example_flutter/util/logging.dart';
+import 'package:cashcard/pages/overview.dart';
+import 'package:cashcard/util/logging.dart';
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 

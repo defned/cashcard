@@ -1,4 +1,4 @@
-import 'package:example_flutter/util/extensions.dart';
+import 'package:cashcard/util/extensions.dart';
 import 'package:flutter/material.dart';
 
 class SubPage extends StatefulWidget {

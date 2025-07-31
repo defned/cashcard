@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:example_flutter/util/logging.dart';
+import 'package:cashcard/util/logging.dart';
 import 'package:path/path.dart';
 
 class AppConfig {

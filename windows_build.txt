@@ -11,6 +11,13 @@ http://repo.msys2.org/distrib/x86_64/msys2-x86_64-20190524.exe
 - MariaDB (https://archive.mariadb.org/mariadb-10.4.34/winx64-packages/mariadb-10.4.34-winx64.msi)
 - HeidiSQL (https://www.heidisql.com/downloads/installers/HeidiSQL_12.11.0.7065_Setup.exe)
 
+Release build:
+```
+flutter build windows
+```
+
+# Obsolete (not needed anymore)
+
 pacman -Sy
 pacman -Syu --noconfirm autoconf libtool automake make autoconf-archive pkg-config
 pacman -Syu --noconfirm gettext base-devel mingw-w64-x86_64-gcc

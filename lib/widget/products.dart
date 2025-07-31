@@ -1,8 +1,8 @@
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:example_flutter/app/style.dart';
-import 'package:example_flutter/db/db.dart';
-import 'package:example_flutter/util/extensions.dart';
-import 'package:example_flutter/util/logging.dart';
+import 'package:cashcard/app/style.dart';
+import 'package:cashcard/db/db.dart';
+import 'package:cashcard/util/extensions.dart';
+import 'package:cashcard/util/logging.dart';
 import 'package:flutter/material.dart';
 
 class Products extends StatefulWidget {
