@@ -3,8 +3,11 @@ import 'dart:io';
 
 import 'package:cashcard/app/app_config.dart';
 import 'package:cashcard/db/db.dart';
+import 'package:cashcard/pages/topupdialog.dart';
+import 'package:cashcard/util/cart.dart';
 import 'package:cashcard/util/logging.dart';
-import 'package:cashcard/widget/expandable.dart';
+import 'package:cashcard/widget/cart.dart';
+import 'package:cashcard/widget/reportsdialog.dart';
 import 'package:path/path.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cashcard/app/app.dart';
@@ -13,7 +16,6 @@ import 'package:cashcard/app/style.dart';
 import 'package:cashcard/main.dart';
 import 'package:cashcard/util/extensions.dart';
 import 'package:cashcard/widget/filedialog.dart';
-import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:virtual_keyboard/virtual_keyboard.dart';
@@ -71,27 +73,26 @@ class _OverviewPageState extends State<OverviewPage>
 
   pay() async {
     try {
-      await app.db.pay(_cardIdFieldController.text,
-          int.tryParse(_propertyFieldController.text));
-      showInfo("${tr('pay')} ${tr('succeeded')}");
+      await app.db.pay(_cardIdFieldController.text, cart);
+      showInfo(this.context, "${tr('pay')} ${tr('succeeded')}");
       resetFields();
     } catch (e) {
-      showError(tr("${e.toString()}"));
+      showError(this.context, tr("${e.toString()}"));
     }
   }
 
-  topUp() async {
-    try {
-      await app.db.topUp(_cardIdFieldController.text,
-          int.tryParse(_propertyFieldController.text));
-      showInfo("${tr('topUp')} ${tr('succeeded')}");
-      resetFields();
-    } catch (e) {
-      showError(tr("${e.toString()}"));
-    }
-  }
+  // topUp() async {
+  //   try {
+  //     await app.db.topUp(_cardIdFieldController.text,
+  //         int.tryParse(_propertyFieldController.text));
+  //     showInfo(this.context, "${tr('topUp')} ${tr('succeeded')}");
+  //     resetFields();
+  //   } catch (e) {
+  //     showError(this.context, tr("${e.toString()}"));
+  //   }
+  // }
 
-  loadDetails(String data) async {
+  loadDetails(String data, {bool updateOnly = true}) async {
     if (AppConfig.transformationFrom != null) {
       final hasMatch = AppConfig.transformationFrom.hasMatch(data);
 
@@ -100,77 +101,47 @@ class _OverviewPageState extends State<OverviewPage>
             AppConfig.transformationFrom, AppConfig.transformationTo);
       else if (!hasMatch) {
         log("$data id is not matching against pattern");
-        showError(tr("invalidID"));
+        showError(this.context, tr("invalidID"));
         return;
       }
     }
 
     try {
       DbRecordBalance record = await app.db.getBalance(data);
-      resetFields();
+      if (!updateOnly) resetFields();
       _cardIdFieldController.text = data;
       _balanceFieldController.text = "${record.balance} Ft";
+      updateButtonState();
     } catch (e) {
       try {
         if (e == DbExceptions.noRows) {
-          await app.db.register(data);
-          showInfo("${tr('registrationPageTitle')} ${tr('succeeded')}");
-          resetFields();
+          await app.db.registerBalance(data);
+          showInfo(this.context,
+              "${tr('registrationPageTitle')} ${tr('succeeded')}");
+          // resetFields();
         }
 
         DbRecordBalance record = await app.db.getBalance(data);
 
         _cardIdFieldController.text = data;
         _balanceFieldController.text = "${record.balance} Ft";
+        updateButtonState();
       } catch (e) {
-        showError(tr("${e.toString()}"));
+        showError(this.context, tr("${e.toString()}"));
       }
     }
   }
 
   resetFields() {
     setState(() {
+      cart.clear();
+      isTopUpButtonActive = false;
       _cardIdFieldController.clear();
       _balanceFieldController.clear();
       _propertyFieldController.clear();
       propertyFocus.requestFocus();
     });
-  }
-
-  showInfo(String info) {
-    Flushbar(
-        flushbarStyle: FlushbarStyle.FLOATING,
-        flushbarPosition: FlushbarPosition.TOP,
-        margin: EdgeInsets.only(
-            left: MediaQuery.of(this.context).size.width - 500 - 30, top: 15),
-        borderRadius: 8,
-        maxWidth: 500,
-        duration: Duration(milliseconds: 1500),
-        backgroundColor: AppColors.ok,
-        messageText: Text(
-          info,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 28, color: Colors.white),
-        ))
-      ..show(this.context);
-  }
-
-  showError(String error) {
-    Flushbar(
-        flushbarStyle: FlushbarStyle.FLOATING,
-        flushbarPosition: FlushbarPosition.TOP,
-        margin: EdgeInsets.only(
-            left: MediaQuery.of(this.context).size.width - 500 - 30, top: 15),
-        borderRadius: 8,
-        maxWidth: 500,
-        duration: Duration(milliseconds: 2000),
-        backgroundColor: AppColors.error,
-        messageText: Text(
-          error,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 28, color: Colors.white),
-        ))
-      ..show(this.context);
+    updateButtonState();
   }
 
   // bool _validId = false;
@@ -199,9 +170,20 @@ class _OverviewPageState extends State<OverviewPage>
               style: TextStyle(fontSize: 20),
             ),
             Expanded(child: createInfoFields()),
+            createButton(
+              tr('topUp'),
+              color: Colors.lightBlue.shade900,
+              scale: 0.5,
+              onTap: showTopUp,
+              enabled: isTopUpButtonActive,
+            ),
           ],
         ),
         actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.table_chart),
+            onPressed: showReportsDialog,
+          ),
           IconButton(
             tooltip: tr("aboutTooltip"),
             icon: Icon(Icons.info_outline),
@@ -242,10 +224,7 @@ class _OverviewPageState extends State<OverviewPage>
             // }
           }
         },
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Row(
           children: <Widget>[
             Expanded(
               child: Padding(
@@ -256,50 +235,127 @@ class _OverviewPageState extends State<OverviewPage>
                   builder: (context, state) => Products(
                     products: state.data,
                     onTap: (DbRecordProduct p) {
-                      log("Clicked to the $p");
-                      setValue(p.priceHuf);
+                      log("Added to cart: $p");
+                      _addToCart(p);
                     },
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 15),
-            Expandable(
-              leading: const Icon(Icons.keyboard, size: 55),
-              // initiallyExpanded: true,
-              title: Row(children: <Widget>[
-                const SizedBox(width: 15),
-                createBalanceInput(),
-                const SizedBox(width: 30),
+            Container(
+              // color: Colors.blue,
+              constraints: BoxConstraints(maxWidth: 500),
+              child: Column(children: <Widget>[
+                Expanded(
+                  child: Cart(
+                    cartItems: cart,
+                    onTapRemoveFromCart: _removeFromCart,
+                    onTapAddToCart: _addToCartByIndex,
+                  ),
+                ),
                 Container(
-                  constraints: BoxConstraints(maxWidth: 500),
+                  color: Colors.grey.shade900,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 15, vertical: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Összesen:',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${totalAmount.toStringAsFixed(0)} Ft',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(10),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
                       Row(
                         mainAxisSize: MainAxisSize.max,
                         children: <Widget>[
-                          createButton(tr('topUp'), onTap: topUp),
+                          createButton(
+                            tr('clear'),
+                            color: Colors.red.shade900,
+                            enabled: isClearButtonActive,
+                            onTap: () {
+                              _clearCart();
+                              resetFields();
+                            },
+                          ),
                           const SizedBox(width: 10),
-                          createButton(tr('pay'), onTap: pay),
-                          const SizedBox(width: 15),
+                          Expanded(
+                            child: createButton(
+                              tr('pay'),
+                              enabled: isPayButtonActive,
+                              color: Colors.green,
+                              onTap: pay,
+                            ),
+                          ),
+                          // const SizedBox(width: 15),
                         ],
                       ),
                     ],
                   ),
                 ),
+                // Expandable(
+                //   leading: const Icon(Icons.keyboard, size: 55),
+                //   // initiallyExpanded: true,
+                //   children: [
+                //     Row(
+                //       mainAxisAlignment: MainAxisAlignment.end,
+                //       children: <Widget>[
+                //         createButtons(),
+                //         const SizedBox(width: 15),
+                //       ],
+                //     ),
+                //   ],
+                //   title: Column(
+                //     mainAxisSize: MainAxisSize.min,
+                //     children: <Widget>[
+                //       Row(
+                //         mainAxisSize: MainAxisSize.max,
+                //         children: <Widget>[
+                //           createButton(
+                //             tr('clear'),
+                //             color: Colors.red.shade900,
+                //             enabled: isClearButtonActive,
+                //             onTap: () {
+                //               _clearCart();
+                //               resetFields();
+                //             },
+                //           ),
+                //           const SizedBox(width: 10),
+                //           Expanded(
+                //             child: createButton(
+                //               tr('pay'),
+                //               enabled: isPayButtonActive,
+                //               color: Colors.green,
+                //               onTap: pay,
+                //             ),
+                //           ),
+                //           const SizedBox(width: 15),
+                //         ],
+                //       ),
+                //     ],
+                //   ),
+                // ),
               ]),
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: <Widget>[
-                    createButtons(),
-                    const SizedBox(width: 15),
-                  ],
-                ),
-              ],
             ),
-            const SizedBox(height: 15),
           ],
         ),
       ),
@@ -339,14 +395,14 @@ class _OverviewPageState extends State<OverviewPage>
           ),
         ),
         // NOTE: Only for test purposes
-        // IconButton(
-        //   iconSize: 35,
-        //   onPressed: () {
-        //     _cardIdFieldController.text = "12312312";
-        //     loadDetails(_cardIdFieldController.text);
-        //   },
-        //   icon: Icon(Icons.input),
-        // ),
+        IconButton(
+          iconSize: 35,
+          onPressed: () {
+            _cardIdFieldController.text = "12312312";
+            loadDetails(_cardIdFieldController.text);
+          },
+          icon: Icon(Icons.credit_card),
+        ),
         const SizedBox(width: 10),
         AutoSizeText(tr('balance'),
             minFontSize: 15, style: TextStyle(fontSize: 25)),
@@ -437,7 +493,7 @@ class _OverviewPageState extends State<OverviewPage>
                         }
                         refresh(() {
                           _validProp = value.isNotEmpty;
-                          isButtonsActive = _validProp &&
+                          isTopUpButtonActive = _validProp &&
                               _cardIdFieldController.text.isNotEmpty;
                         });
                         return null;
@@ -490,15 +546,6 @@ class _OverviewPageState extends State<OverviewPage>
     return Container(
       constraints: BoxConstraints(maxWidth: 485),
       child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-        // Row(
-        //   mainAxisSize: MainAxisSize.max,
-        //   children: <Widget>[
-        //     createButton(tr('topUp'), onTap: topUp),
-        //     const SizedBox(width: 10),
-        //     createButton(tr('pay'), onTap: pay),
-        //   ],
-        // ),
-        // SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
               color: Colors.black,
@@ -524,6 +571,64 @@ class _OverviewPageState extends State<OverviewPage>
     );
   }
 
+  ////////////////////
+  List<CartItem> cart = [];
+  void _addToCart(DbRecordProduct product) {
+    setState(() {
+      var existingItem = cart.firstWhere(
+        (item) => item.product.id == product.id,
+        orElse: () => CartItem(product: product, quantity: 0),
+      );
+
+      if (existingItem.quantity == 0) {
+        cart.add(CartItem(product: product, quantity: 1));
+      } else {
+        existingItem.quantity++;
+      }
+    });
+    updateButtonState();
+  }
+
+  void _removeFromCart(int index) {
+    setState(() {
+      if (cart[index].quantity > 1) {
+        cart[index].quantity--;
+      } else {
+        cart.removeAt(index);
+      }
+    });
+    updateButtonState();
+  }
+
+  void _addToCartByIndex(int index) {
+    setState(() {
+      cart[index].quantity++;
+    });
+    updateButtonState();
+  }
+
+  void _clearCart() {
+    setState(() {
+      cart.clear();
+    });
+    updateButtonState();
+  }
+
+  void updateButtonState() {
+    setState(() {
+      isPayButtonActive = isClearButtonActive = (cart.length != 0);
+      isTopUpButtonActive = _cardIdFieldController.text.isNotEmpty;
+    });
+  }
+
+  double get totalAmount {
+    return cart.fold(
+      0,
+      (sum, item) => sum + (item.product.priceHuf * item.quantity),
+    );
+  }
+
+  ///
   void setValue(int value) {
     // Update the screen
     TextEditingController ctrl = _propertyFieldController;
@@ -568,36 +673,68 @@ class _OverviewPageState extends State<OverviewPage>
     });
   }
 
-  bool isButtonsActive = true;
-  Widget createButton(String s, {void Function() onTap}) {
-    return Expanded(
-      child: RawMaterialButton(
-        onPressed: isButtonsActive ? onTap : null,
-        child: Container(
-          decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(radius()),
-              border: Border.all(
-                width: 3,
-                color: isButtonsActive
-                    ? AppColors.brightText
-                    : AppColors.disabledColor,
-              )),
-          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 15.0),
-          child: Center(
-            child: AutoSizeText(s,
-                style: TextStyle(
-                  fontSize: 35,
-                  color: isButtonsActive
-                      ? AppColors.brightText
-                      : AppColors.disabledColor,
-                ),
-                maxLines: 1,
-                group: group),
+  bool isTopUpButtonActive = false;
+  bool isClearButtonActive = false;
+  bool isPayButtonActive = false;
+
+  Widget createButton(String s,
+      {Color color,
+      double scale = 1,
+      void Function() onTap,
+      bool enabled = true}) {
+    return RawMaterialButton(
+      onPressed: enabled ? onTap : null,
+      child: Container(
+        decoration: BoxDecoration(
+            color: (color == null ? Colors.black : color),
+            borderRadius: BorderRadius.circular(radius()),
+            border: Border.all(
+              width: 3 * scale,
+              color: enabled ? AppColors.brightText : AppColors.disabledColor,
+            )),
+        padding: EdgeInsets.symmetric(
+            horizontal: 15.0 * scale, vertical: 15.0 * scale),
+        child: Center(
+          child: AutoSizeText(
+            s,
+            style: TextStyle(
+              fontSize: 35 * scale,
+              color: enabled ? AppColors.brightText : AppColors.disabledColor,
+            ),
+            maxLines: 1,
+            group: group,
           ),
         ),
       ),
     );
+  }
+
+  void showTopUp() {
+    showDialog<void>(
+      barrierDismissible: true,
+      context: this.context,
+      builder: (context) {
+        return TopUpDialog(
+            cardId: _cardIdFieldController.text,
+            onSuccess: () {
+              Navigator.pop(context);
+              loadDetails(_cardIdFieldController.text, updateOnly: true);
+              Future.delayed(
+                  Duration(milliseconds: 250),
+                  () => showInfo(
+                      this.context, "${tr('topUp')} ${tr('succeeded')}"));
+            });
+      },
+    );
+  }
+
+  void showReportsDialog() {
+    showDialog<void>(
+        barrierDismissible: true,
+        context: this.context,
+        builder: (context) {
+          return ReportsDialog();
+        });
   }
 
   void showAbout() {
@@ -713,10 +850,11 @@ class _OverviewPageState extends State<OverviewPage>
                   try {
                     records = serializeRecordsFromCSV(fs);
                     await app.db.insertBalances(records);
-                    showInfo(
+                    showInfo(this.context,
                         "${tr('importAction')} ${tr('succeeded')} ${records.length}/${records.length}");
                   } catch (e) {
-                    showError("${tr('importAction')} ${tr('failed')}");
+                    showError(
+                        this.context, "${tr('importAction')} ${tr('failed')}");
                   }
                 },
               ),
@@ -753,7 +891,7 @@ class _OverviewPageState extends State<OverviewPage>
                       "export-${DateTime.now().toIso8601String().replaceAll(".", "").replaceAll(":", "").replaceAll("-", "").replaceAll(" ", "")}.csv"));
                   exportFile.writeAsStringSync(serializedRecords);
                   log("Export succeeded to '${exportFile.absolute.path}'");
-                  showInfo(
+                  showInfo(this.context,
                       "${tr('exportAction')} ${tr('succeeded')} ${records.length}/${records.length}");
                 },
               ),

@@ -81,8 +81,8 @@ class Expandable extends StatefulWidget {
 
 class _ExpandableState extends State<Expandable>
     with SingleTickerProviderStateMixin {
-  static final Animatable<double> _easeOutTween =
-      CurveTween(curve: Curves.easeOut);
+  // static final Animatable<double> _easeOutTween =
+  //     CurveTween(curve: Curves.easeOut);
   static final Animatable<double> _easeInTween =
       CurveTween(curve: Curves.easeIn);
   static final Animatable<double> _halfTween =
@@ -96,10 +96,10 @@ class _ExpandableState extends State<Expandable>
   AnimationController _controller;
   Animation<double> _iconTurns;
   Animation<double> _heightFactor;
-  Animation<Color> _borderColor;
-  Animation<Color> _headerColor;
-  Animation<Color> _iconColor;
-  Animation<Color> _backgroundColor;
+  // Animation<Color> _borderColor;
+  // Animation<Color> _headerColor;
+  // Animation<Color> _iconColor;
+  // Animation<Color> _backgroundColor;
 
   bool _isExpanded = false;
 
@@ -109,11 +109,11 @@ class _ExpandableState extends State<Expandable>
     _controller = AnimationController(duration: _kExpand, vsync: this);
     _heightFactor = _controller.drive(_easeInTween);
     _iconTurns = _controller.drive(_halfTween.chain(_easeInTween));
-    _borderColor = _controller.drive(_borderColorTween.chain(_easeOutTween));
-    _headerColor = _controller.drive(_headerColorTween.chain(_easeInTween));
-    _iconColor = _controller.drive(_iconColorTween.chain(_easeInTween));
-    _backgroundColor =
-        _controller.drive(_backgroundColorTween.chain(_easeOutTween));
+    // _borderColor = _controller.drive(_borderColorTween.chain(_easeOutTween));
+    // _headerColor = _controller.drive(_headerColorTween.chain(_easeInTween));
+    // _iconColor = _controller.drive(_iconColorTween.chain(_easeInTween));
+    // _backgroundColor =
+    //     _controller.drive(_backgroundColorTween.chain(_easeOutTween));
 
     _isExpanded =
         PageStorage.of(context)?.readState(context) ?? widget.initiallyExpanded;

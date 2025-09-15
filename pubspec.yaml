@@ -31,6 +31,8 @@ dependencies:
   fluro: 1.6.2
   logging: any
   cupertino_icons: ^0.1.0
+  # path_provider: 0.5.0
+  uuid: any
 
 dev_dependencies:
   # flutter_test:

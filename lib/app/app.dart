@@ -5,6 +5,7 @@ import 'package:cashcard/app/style.dart';
 import 'package:cashcard/db/db.dart';
 import 'package:cashcard/util/logging.dart';
 import 'package:fluro/fluro.dart';
+import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:logging/logging.dart';
@@ -35,6 +36,42 @@ class Application extends WidgetsBindingObserver {
 }
 
 Application app;
+
+showInfo(BuildContext context, String info) {
+  Flushbar(
+      flushbarStyle: FlushbarStyle.FLOATING,
+      flushbarPosition: FlushbarPosition.TOP,
+      margin: EdgeInsets.only(
+          left: MediaQuery.of(context).size.width - 500 - 30, top: 15),
+      borderRadius: 8,
+      maxWidth: 500,
+      duration: Duration(milliseconds: 1500),
+      backgroundColor: AppColors.ok,
+      messageText: Text(
+        info,
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 28, color: Colors.white),
+      ))
+    ..show(context);
+}
+
+showError(BuildContext context, String error) {
+  Flushbar(
+      flushbarStyle: FlushbarStyle.FLOATING,
+      flushbarPosition: FlushbarPosition.TOP,
+      margin: EdgeInsets.only(
+          left: MediaQuery.of(context).size.width - 500 - 30, top: 15),
+      borderRadius: 8,
+      maxWidth: 500,
+      duration: Duration(milliseconds: 2000),
+      backgroundColor: AppColors.error,
+      messageText: Text(
+        error,
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 28, color: Colors.white),
+      ))
+    ..show(context);
+}
 
 class AppComponent extends StatefulWidget {
   @override
