@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:cashcard/app/app.dart';
 import 'package:cashcard/app/style.dart';
 import 'package:cashcard/db/db.dart';
 import 'package:cashcard/util/extensions.dart';
@@ -9,8 +10,10 @@ import 'package:flutter/material.dart';
 
 class Products extends StatefulWidget {
   final Function onTap;
+  final Function onNewProduct;
   final List<DbRecordProduct> products;
-  Products({Key key, this.products, this.onTap}) : super(key: key);
+  Products({Key key, this.products, this.onTap, this.onNewProduct})
+      : super(key: key);
 
   @override
   _ProductsState createState() => _ProductsState();
@@ -92,12 +95,157 @@ class _ProductsState extends State<Products>
   String searchQuery = "";
   List<DbRecordProduct> products = [];
 
+  void _showNewProductDialog(String barcode) {
+    String code = barcode;
+    String name = '';
+    int price = 0;
+    bool favourite = false;
+    int selectedGroupId;
+
+    showDialog(
+      context: context,
+      builder: (context) => Theme(
+        data: ThemeData.light(),
+        child: AlertDialog(
+          title: Text('Új termék felvétele'),
+          content: StatefulBuilder(
+            builder: (context, setDialogState) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  decoration: InputDecoration(labelText: 'Vonalkód'),
+                  controller: TextEditingController(text: code),
+                  onChanged: (value) => code = value,
+                  // enabled: false,
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Termék neve'),
+                  onChanged: (value) => name = value,
+                  autofocus: true,
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Ár (Ft)'),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) => price = int.tryParse(value) ?? 0,
+                ),
+                Row(
+                  children: <Widget>[
+                    Text("Kedvenc"),
+                    StatefulBuilder(builder: (context, setState) {
+                      return Checkbox(
+                        value: favourite,
+                        // decoration: InputDecoration(labelText: 'Ár (Ft)'),
+                        // keyboardType: TextInputType.number,
+                        onChanged: (value) => setState(() {
+                          favourite = value;
+                        }),
+                      );
+                    }),
+                  ],
+                ),
+                SizedBox(height: 10),
+                DropdownButton<int>(
+                  hint: Text('Válassz csoportot'),
+                  value: selectedGroupId,
+                  isExpanded: true,
+                  items: categories
+                      .where((c) => (c.id != null && c.id >= 0))
+                      .map((group) {
+                    return DropdownMenuItem<int>(
+                      value: group.id,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            color: Color(
+                              int.parse(group.color.replaceAll('#', '0xFF')),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Text(group.name),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setDialogState(() {
+                      selectedGroupId = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            MaterialButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Mégse'),
+            ),
+            MaterialButton(
+              onPressed: () async {
+                if (name.isNotEmpty && price > 0) {
+                  try {
+                    await app.db.registerProduct(code == "" ? null : code, name,
+                        price, favourite, selectedGroupId);
+                    showInfo(this.context,
+                        "${tr('createProductAction')} ${tr('succeeded')}");
+                    Future.delayed(Duration(milliseconds: 2000), () {
+                      Navigator.of(context).pop();
+                      widget.onNewProduct();
+                    });
+                  } catch (e) {
+                    showError(this.context,
+                        "${tr('createProductAction')} ${tr('failed')}: $e");
+                  }
+                }
+                // if (name.isNotEmpty && price > 0) {
+                //   try {
+                //     final conn = await DatabaseService.getConnection();
+                //     await conn.query(
+                //       'INSERT INTO products (barcode, name, price, group_id) VALUES (?, ?, ?, ?)',
+                //       [barcode, name, price, selectedGroupId],
+                //     );
+                //     Navigator.pop(context);
+                //     _loadProducts();
+                //     _processBarcodeRead(barcode);
+                //   } catch (e) {
+                //     _showError('Termék mentési hiba: $e');
+                //   }
+                // }
+              },
+              child: Text('Mentés'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.max,
       children: <Widget>[
-        createBalanceInput(),
+        Row(
+          children: <Widget>[
+            ActionChip(
+                shape: RoundedRectangleBorder(
+                    side: BorderSide(
+                      width: 3,
+                      color: AppColors.brightText,
+                    ),
+                    borderRadius: BorderRadius.circular(10)),
+                label: Text("+", style: TextStyle(fontSize: 26)),
+                backgroundColor: Colors.green.withAlpha(100),
+                onPressed: () {
+                  _showNewProductDialog("");
+                }),
+            const SizedBox(width: 5),
+            Expanded(child: createBalanceInput()),
+            const SizedBox(width: 50),
+          ],
+        ),
         Container(
           height: 60,
           child: ListView(
@@ -141,8 +289,9 @@ class _ProductsState extends State<Products>
                 if (_propertyFieldController.text != "" &&
                     !(p.name.toLowerCase().contains(
                             _propertyFieldController.text.toLowerCase()) ||
-                        p.code.toLowerCase().contains(
-                            _propertyFieldController.text.toLowerCase())))
+                        (p.code != null &&
+                            p.code.toLowerCase().contains(
+                                _propertyFieldController.text.toLowerCase()))))
                   res = false;
                 return res;
               }).map<Widget>((p) {

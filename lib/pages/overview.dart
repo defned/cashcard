@@ -159,6 +159,13 @@ class _OverviewPageState extends State<OverviewPage>
     });
   }
 
+  void _newProduct() {
+    setState(() {
+      _dbProducts = app.db.getProductAll("");
+    });
+    resetFields();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -234,6 +241,7 @@ class _OverviewPageState extends State<OverviewPage>
                   future: _dbProducts,
                   builder: (context, state) => Products(
                     products: state.data,
+                    onNewProduct: _newProduct,
                     onTap: (DbRecordProduct p) {
                       log("Added to cart: $p");
                       _addToCart(p);
@@ -395,14 +403,14 @@ class _OverviewPageState extends State<OverviewPage>
           ),
         ),
         // NOTE: Only for test purposes
-        IconButton(
-          iconSize: 35,
-          onPressed: () {
-            _cardIdFieldController.text = "12312312";
-            loadDetails(_cardIdFieldController.text);
-          },
-          icon: Icon(Icons.credit_card),
-        ),
+        // IconButton(
+        //   iconSize: 35,
+        //   onPressed: () {
+        //     _cardIdFieldController.text = "12312312";
+        //     loadDetails(_cardIdFieldController.text);
+        //   },
+        //   icon: Icon(Icons.credit_card),
+        // ),
         const SizedBox(width: 10),
         AutoSizeText(tr('balance'),
             minFontSize: 15, style: TextStyle(fontSize: 25)),

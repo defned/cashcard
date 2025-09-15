@@ -13,6 +13,7 @@
     "delete": "Delete",
     "cardId": "Card ID",
     "invalidID": "Invalid ID",
+    "createProductAction": "Product creation",
     "exportAction": "Export",
     "importAction": "Import",
     "deleteAction": "Delete",

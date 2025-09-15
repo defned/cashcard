@@ -220,7 +220,7 @@ class Db {
   }
 
   Future registerProduct(String code, String name, int priceHuf, bool favourite,
-      String categoryId) async {
+      int categoryId) async {
     try {
       await connect();
       // Query the database using a parameterized query
@@ -231,7 +231,7 @@ class Db {
       if (results.length != 0) throw DbExceptions.alreadyExist;
       // Insert some data
       var result = await _connection.query(
-          'insert into product (code, name, price_huf, favourite, categroy_id) values (?, ?, ?, ?, ?)',
+          'insert into product (code, name, price_huf, favourite, category_id) values (?, ?, ?, ?, ?)',
           [
             code,
             name,
