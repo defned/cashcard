@@ -1005,7 +1005,7 @@ class _OverviewPageState extends State<OverviewPage>
         bytes += generator.row([
           PosColumn(
             width: 8,
-            text: "      ${item.quantity}db * ${item.product.priceHuf} Ft",
+            text: "     ${item.quantity}db * ${item.product.priceHuf} Ft",
             containsChinese: true,
             styles: const PosStyles(
               align: PosAlign.left,
