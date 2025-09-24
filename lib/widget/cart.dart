@@ -1,19 +1,22 @@
 import 'package:cashcard/app/style.dart';
+import 'package:cashcard/pages/quantitydialog.dart';
 import 'package:cashcard/util/cart.dart';
 import 'package:flutter/material.dart';
 
 class Cart extends StatefulWidget {
   final Function(int) onTapRemoveFromCart;
   final Function(int) onTapAddToCart;
+  final Function(int, int) onChangeQuantityOfCartItem;
   final ValueNotifier<int> itemsChanged;
   final List<CartItem> cartItems;
-  Cart(
-      {Key key,
-      this.cartItems,
-      this.onTapRemoveFromCart,
-      this.onTapAddToCart,
-      this.itemsChanged})
-      : super(key: key);
+  Cart({
+    Key key,
+    this.cartItems,
+    this.onTapRemoveFromCart,
+    this.onTapAddToCart,
+    this.onChangeQuantityOfCartItem,
+    this.itemsChanged,
+  }) : super(key: key);
   @override
   _CartState createState() => _CartState();
 }
@@ -83,7 +86,19 @@ class _CartState extends State<Cart> {
                         ),
                       ),
                       const SizedBox(width: 20),
-                      Text('${item.quantity}x', style: TextStyle(fontSize: 26)),
+                      MaterialButton(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 13, horizontal: 8),
+                        shape: RoundedRectangleBorder(
+                            side: BorderSide(
+                                width: 3, color: AppColors.brightText),
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10))),
+                        child: Text('${item.quantity}x',
+                            style: TextStyle(fontSize: 26)),
+                        onPressed: () =>
+                            _showQuantityDialog(index, item.quantity),
+                      ),
                       const SizedBox(width: 20),
                       Container(
                         decoration: BoxDecoration(
@@ -102,6 +117,16 @@ class _CartState extends State<Cart> {
                 ),
               );
             }),
+      ),
+    );
+  }
+
+  void _showQuantityDialog(int index, int quantity) {
+    showDialog(
+      context: context,
+      builder: (context) => QuantityDialog(
+        quantity: quantity,
+        onSuccess: (value) => widget.onChangeQuantityOfCartItem(index, value),
       ),
     );
   }

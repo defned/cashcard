@@ -1,27 +1,24 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cashcard/app/style.dart';
 import 'package:cashcard/util/extensions.dart';
-import 'package:cashcard/app/app.dart';
 import 'package:flutter/material.dart';
 import 'package:virtual_keyboard/virtual_keyboard.dart';
 
-class TopUpDialog extends StatefulWidget {
-  final String cardId;
-  final Function onSuccess;
-  TopUpDialog({Key key, this.cardId, this.onSuccess}) : super(key: key);
+class QuantityDialog extends StatefulWidget {
+  final int quantity;
+  final Function(int) onSuccess;
+  QuantityDialog({Key key, this.quantity, this.onSuccess}) : super(key: key);
 
   @override
-  _TopUpDialogState createState() => _TopUpDialogState();
+  _QuantityDialogState createState() => _QuantityDialogState();
 }
 
-class _TopUpDialogState extends State<TopUpDialog>
-    with StateWithLocalization<TopUpDialog> {
+class _QuantityDialogState extends State<QuantityDialog>
+    with StateWithLocalization<QuantityDialog> {
   final FocusNode propertyFocus = FocusNode();
 
   AutoSizeGroup group = AutoSizeGroup();
-  final TextEditingController _propertyFieldController =
-      TextEditingController();
-
+  TextEditingController _propertyFieldController;
   // True if shift enabled.
   bool shiftEnabled = false;
 
@@ -29,6 +26,13 @@ class _TopUpDialogState extends State<TopUpDialog>
   final _formKey = GlobalKey<FormState>();
   final GlobalKey<FormFieldState> _propertyFieldKey =
       GlobalKey<FormFieldState>();
+
+  @override
+  void initState() {
+    _propertyFieldController =
+        TextEditingController(text: widget.quantity?.toString());
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +44,7 @@ class _TopUpDialogState extends State<TopUpDialog>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              tr('topUp'),
+              tr('quantityTitle'),
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
             ),
             IconButton(
@@ -62,12 +66,6 @@ class _TopUpDialogState extends State<TopUpDialog>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text(widget.cardId.isEmpty ? "NaN" : widget.cardId,
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.green.shade900,
-                      )),
                   createBalanceInput(),
                   createButtons(),
                 ],
@@ -83,11 +81,16 @@ class _TopUpDialogState extends State<TopUpDialog>
                   side: BorderSide(width: 3, color: AppColors.disabledColor),
                   borderRadius: BorderRadius.circular(radius())),
               padding: EdgeInsets.symmetric(horizontal: 15.0, vertical: 15.0),
-              onPressed: () => topUp(context),
-              child: Text(
-                tr('topUp'),
-                style: TextStyle(fontSize: 23, color: Colors.black),
-              ),
+              onPressed: () {
+                if (_formKey.currentState != null &&
+                    _formKey.currentState.validate()) {
+                  if (widget.onSuccess != null)
+                    widget.onSuccess(int.parse(_propertyFieldController.text));
+                  Navigator.of(context).maybePop();
+                }
+              },
+              child: Text(tr('setAction'),
+                  style: TextStyle(fontSize: 23, color: Colors.black)),
               color: Colors.green,
             ),
           ),
@@ -126,11 +129,11 @@ class _TopUpDialogState extends State<TopUpDialog>
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
-              Text(tr('amount'), style: TextStyle(fontSize: 30)),
+              Text(tr('quantity'), style: TextStyle(fontSize: 30)),
               Stack(
                 children: <Widget>[
                   TextFormField(
-                    readOnly: false,
+                    readOnly: true,
                     focusNode: propertyFocus,
                     autocorrect: false,
                     autovalidate: true,
@@ -145,9 +148,8 @@ class _TopUpDialogState extends State<TopUpDialog>
                     key: _propertyFieldKey,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "Adjon meg egy érvényes összeget";
-                      }
-                      if (value.isNotEmpty) {
+                        return "Adjon meg egy érvényes mennyiséget";
+                      } else if (value.isNotEmpty) {
                         int amount = 0;
                         try {
                           amount = int.parse(value);
@@ -156,7 +158,7 @@ class _TopUpDialogState extends State<TopUpDialog>
                         }
 
                         if (amount <= 0) {
-                          return tr("mustBePositive");
+                          return tr("quantityMustBePositive");
                         }
                       }
                       return null;
@@ -169,7 +171,7 @@ class _TopUpDialogState extends State<TopUpDialog>
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 16.0),
                         child: Text(
-                          "Ft",
+                          "db",
                           style: TextStyle(
                               color: AppColors.darkText, fontSize: 45),
                         ),
@@ -262,17 +264,6 @@ class _TopUpDialogState extends State<TopUpDialog>
     setState(() {
       if (ctrl == _propertyFieldController) {}
     });
-  }
-
-  topUp(BuildContext context) async {
-    try {
-      await app.db
-          .topUp(widget.cardId, int.tryParse(_propertyFieldController.text));
-      resetFields();
-      if (widget.onSuccess != null) widget.onSuccess();
-    } catch (e) {
-      showError(this.context, tr("${e.toString()}"));
-    }
   }
 
   resetFields() {

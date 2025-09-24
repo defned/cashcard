@@ -19,7 +19,6 @@ import 'package:cashcard/util/extensions.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:virtual_keyboard/virtual_keyboard.dart';
 import 'package:image/image.dart' as img;
 import 'package:intl/intl.dart';
 
@@ -42,8 +41,6 @@ class _OverviewPageState extends State<OverviewPage>
   final TextEditingController _propertyFieldController =
       TextEditingController();
   final GlobalKey<FormFieldState> _cardIdFieldKey = GlobalKey<FormFieldState>();
-  final GlobalKey<FormFieldState> _propertyFieldKey =
-      GlobalKey<FormFieldState>();
 
   StreamSubscription<String> _subscription;
 
@@ -63,7 +60,7 @@ class _OverviewPageState extends State<OverviewPage>
 
   /// Parse the card number from the reader's ASCII-hex payload.
   /// Example: "41FF0000000300975EED010098" -> "9920237"
-  String parseCardNumber2(String hexData, {bool validateChecksum = true}) {
+  String parseCardNumber(String hexData, {bool validateChecksum = true}) {
     // Keep only hex chars
     final cleaned = hexData.replaceAll(RegExp(r'[^0-9a-fA-F]'), '');
     if (cleaned.isEmpty || cleaned.length.isOdd) {
@@ -117,7 +114,7 @@ class _OverviewPageState extends State<OverviewPage>
   void initState() {
     super.initState();
     _subscription = serialPort.stream
-        .map((data) => parseCardNumber2(data.trim()))
+        .map((data) => parseCardNumber(data.trim()))
         .listen(loadDetails);
     _initStateAsync = initStateAsync();
   }
@@ -145,7 +142,8 @@ class _OverviewPageState extends State<OverviewPage>
     try {
       await app.db.pay(_cardIdFieldController.text, cart);
       showInfo(this.context, "${tr('pay')} ${tr('succeeded')}");
-      await printReqReceipt(cart, origValueRaw: _balanceFieldController.text);
+      if (AppConfig.printerName != null)
+        await printReqReceipt(cart, origValueRaw: _balanceFieldController.text);
       resetFields();
     } catch (e) {
       showError(this.context, tr("${e.toString()}"));
@@ -178,7 +176,6 @@ class _OverviewPageState extends State<OverviewPage>
           await app.db.registerBalance(data);
           showInfo(this.context,
               "${tr('registrationPageTitle')} ${tr('succeeded')}");
-          // resetFields();
         }
 
         DbRecordBalance record = await app.db.getBalance(data);
@@ -204,13 +201,10 @@ class _OverviewPageState extends State<OverviewPage>
     updateButtonState();
   }
 
-  // bool _validId = false;
-  bool _validProp = false;
   double radius() => 10;
   final FocusNode cardIdFocus = FocusNode();
   final FocusNode propertyFocus = FocusNode();
   final FocusNode _pageFocus = FocusNode();
-  final FocusNode _propertyFocus = FocusNode();
 
   void refresh(Function f) {
     Future.delayed(Duration(milliseconds: 100), () {
@@ -219,10 +213,7 @@ class _OverviewPageState extends State<OverviewPage>
   }
 
   void _newProduct() {
-    // setState(() {
-    // _dbProducts = app.db.getProductAll("");
     _initStateAsync = initStateAsync();
-    // });
     resetFields();
   }
 
@@ -280,17 +271,13 @@ class _OverviewPageState extends State<OverviewPage>
                       products: _dbProducts,
                       categories: _dbCategories,
                       onNewProduct: _newProduct,
-                      onTap: (DbRecordProduct p) {
-                        log("Added to cart: $p");
-                        _addToCart(p);
-                      },
+                      onTap: (DbRecordProduct p) => _addToCart(p),
                     );
                   },
                 ),
               ),
             ),
             Container(
-              // color: Colors.blue,
               constraints: BoxConstraints(maxWidth: 500),
               child: Column(children: <Widget>[
                 Expanded(
@@ -298,6 +285,7 @@ class _OverviewPageState extends State<OverviewPage>
                     cartItems: cart,
                     onTapRemoveFromCart: _removeFromCart,
                     onTapAddToCart: _addToCartByIndex,
+                    onChangeQuantityOfCartItem: _setQuantityOfCartItemByIndex,
                     itemsChanged: cartCount,
                   ),
                 ),
@@ -422,14 +410,14 @@ class _OverviewPageState extends State<OverviewPage>
             minFontSize: 15, style: TextStyle(fontSize: 25)),
         SizedBox(width: 10),
         SizedBox(
-          width: 150,
+          width: 175,
           child: TextFormField(
             enabled: false,
             decoration: InputDecoration(
-                disabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                enabledBorder: InputBorder.none),
-            // focusNode: cardIdFocus,
+              disabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              enabledBorder: InputBorder.none,
+            ),
             cursorColor: Colors.transparent,
             enableSuggestions: false,
             autofocus: true,
@@ -445,144 +433,6 @@ class _OverviewPageState extends State<OverviewPage>
         ),
         const SizedBox(width: 10),
       ],
-    );
-  }
-
-  Widget createBalanceInput() {
-    return Expanded(
-      child: Column(
-        children: <Widget>[
-          const SizedBox(height: 15),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: <Widget>[
-              Text(tr('amount'), style: TextStyle(fontSize: 30)),
-              RawKeyboardListener(
-                focusNode: _propertyFocus,
-                onKey: (event) {
-                  print(event.character);
-                  // if (event.logicalKey.keyId == 54 &&
-                  //     (_propertyFieldKey.currentState.value
-                  //             as String)
-                  //         .isNotEmpty) {
-                  //   validate();
-                  // }
-                },
-                child: Stack(
-                  children: <Widget>[
-                    TextFormField(
-                      enabled: false,
-                      cursorColor: Colors.transparent,
-                      focusNode: propertyFocus,
-                      autocorrect: false,
-                      autovalidate: true,
-                      enableSuggestions: false,
-                      decoration: InputDecoration(
-                        disabledBorder: UnderlineInputBorder(
-                            borderSide:
-                                BorderSide(color: AppColors.brightText)),
-                      ),
-                      controller: _propertyFieldController,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 50,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.accent,
-                      ),
-                      key: _propertyFieldKey,
-                      validator: (value) {
-                        if (value.isNotEmpty) {
-                          int amount = 0;
-                          try {
-                            amount = int.parse(value);
-                          } catch (e) {
-                            refresh(() => _validProp = false);
-                            return tr("notNumber");
-                          }
-
-                          if (amount <= 0) {
-                            refresh(() => _validProp = false);
-                            return tr("mustBePositive");
-                          }
-                        }
-                        refresh(() {
-                          _validProp = value.isNotEmpty;
-                          isTopUpButtonActive = _validProp &&
-                              _cardIdFieldController.text.isNotEmpty;
-                        });
-                        return null;
-                      },
-                    ),
-                    if (_propertyFieldController.text.isNotEmpty)
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: Text(
-                            "Ft",
-                            style: TextStyle(
-                                color: AppColors.brightText, fontSize: 45),
-                          ),
-                        ),
-                      ),
-                    if (_propertyFieldController.text.isNotEmpty)
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: IconButton(
-                            iconSize: 35,
-                            onPressed: () {
-                              Future.delayed(Duration(milliseconds: 50))
-                                  .then((_) {
-                                setState(() {
-                                  _propertyFieldController.clear();
-                                });
-                              });
-                            },
-                            icon: Icon(Icons.clear),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget createButtons() {
-    return Container(
-      constraints: BoxConstraints(maxWidth: 485),
-      child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-        Container(
-          decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(radius()),
-              border: Border.all(
-                width: 3,
-                color: AppColors.brightText,
-              )),
-          child: Column(
-            children: <Widget>[
-              SizedBox(height: 20),
-              VirtualKeyboard(
-                  fontSize: 30,
-                  textColor: AppColors.brightText,
-                  height: 200,
-                  type: VirtualKeyboardType.Numeric,
-                  onKeyPress: _onKeyPress),
-              SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ]),
     );
   }
 
@@ -618,6 +468,13 @@ class _OverviewPageState extends State<OverviewPage>
     updateButtonState();
   }
 
+  void _setQuantityOfCartItemByIndex(int index, int quantity) {
+    setState(() {
+      cart[index].quantity = quantity;
+    });
+    updateButtonState();
+  }
+
   void _addToCartByIndex(int index) {
     setState(() {
       cart[index].quantity++;
@@ -646,51 +503,6 @@ class _OverviewPageState extends State<OverviewPage>
       0,
       (sum, item) => sum + (item.product.priceHuf * item.quantity),
     );
-  }
-
-  ///
-  void setValue(int value) {
-    // Update the screen
-    TextEditingController ctrl = _propertyFieldController;
-    ctrl.text = value.toString();
-    setState(() {
-      if (ctrl == _propertyFieldController) {}
-    });
-  }
-
-  /// Fired when the virtual keyboard key is pressed.
-  _onKeyPress(VirtualKeyboardKey key) {
-    TextEditingController ctrl;
-    ctrl = _propertyFieldController;
-
-    if (key.keyType == VirtualKeyboardKeyType.String) {
-      ctrl.text = ctrl.text + (shiftEnabled ? key.capsText : key.text);
-    } else if (key.keyType == VirtualKeyboardKeyType.Action) {
-      switch (key.action) {
-        case VirtualKeyboardKeyAction.Backspace:
-          if (ctrl.text.length == 0) return;
-          ctrl.text = ctrl.text.substring(0, ctrl.text.length - 1);
-          // if (text.length == 0) return;
-          // text = text.substring(0, text.length - 1);
-          break;
-        case VirtualKeyboardKeyAction.Return:
-          ctrl.text = ctrl.text + '\n';
-          // text = text + '\n';
-          break;
-        case VirtualKeyboardKeyAction.Space:
-          ctrl.text = ctrl.text + key.text;
-          // text = text + key.text;
-          break;
-        case VirtualKeyboardKeyAction.Shift:
-          shiftEnabled = !shiftEnabled;
-          break;
-        default:
-      }
-    }
-    // Update the screen
-    setState(() {
-      if (ctrl == _propertyFieldController) {}
-    });
   }
 
   bool isTopUpButtonActive = false;
@@ -741,7 +553,8 @@ class _OverviewPageState extends State<OverviewPage>
               String origValue = _balanceFieldController.text;
               await loadDetails(_cardIdFieldController.text, updateOnly: true);
               String newValue = _balanceFieldController.text;
-              printReqTopUp(origValue, newValue);
+              if (AppConfig.printerName != null)
+                await printReqTopUp(origValue, newValue);
               Future.delayed(
                   Duration(milliseconds: 250),
                   () => showInfo(
@@ -886,35 +699,77 @@ class _OverviewPageState extends State<OverviewPage>
     bytes += [27, 97, 1];
     bytes += generator.text('---- NEM ADÓÜGYI BIZONYLAT ----');
     bytes += generator.feed(1);
+
     bytes += generator.text('Nyugta részletezö');
-    bytes += generator.text('----------------------------------------------');
+    bytes += generator.hr();
 
-    bytes += [27, 97, 2];
-    bytes += generator.text('Feltöltés elötti egyenleg  $origValue Ft',
-        containsChinese: true);
-    bytes += generator.text('Feltötött összeg  ${newValue - origValue} Ft',
-        containsChinese: true);
-
-    bytes += [27, 97, 1];
-    bytes += generator.text('----------------------------------------------');
-
-    bytes += [27, 97, 2];
-    bytes += generator.text(
-      'Új egyenleg  $newValue Ft',
-      containsChinese: true,
-      styles: const PosStyles(
-        height: PosTextSize.size2,
-        bold: true,
+    bytes += generator.row([
+      PosColumn(
+        width: 8,
+        text: "FELTÖLTÉS ELÖTTI EGYENLEG",
+        containsChinese: true,
+        styles: const PosStyles(
+          align: PosAlign.left,
+        ),
       ),
-    );
+      PosColumn(
+        width: 4,
+        text: "$origValue Ft",
+        styles: const PosStyles(
+          align: PosAlign.right,
+        ),
+      ),
+    ]);
+    bytes += generator.row([
+      PosColumn(
+        width: 8,
+        text: "FELTÖTÖTT ÖSSZEG",
+        containsChinese: true,
+        styles: const PosStyles(
+          align: PosAlign.left,
+        ),
+      ),
+      PosColumn(
+        width: 4,
+        text: "${newValue - origValue} Ft",
+        styles: const PosStyles(
+          align: PosAlign.right,
+        ),
+      ),
+    ]);
+
+    bytes += [27, 97, 1];
+    bytes += generator.hr();
+
+    bytes += generator.row([
+      PosColumn(
+        width: 8,
+        text: "ÚJ EGYENLEG",
+        containsChinese: true,
+        styles: const PosStyles(
+          height: PosTextSize.size2,
+          bold: true,
+          align: PosAlign.left,
+        ),
+      ),
+      PosColumn(
+        width: 4,
+        text: "$newValue Ft",
+        styles: const PosStyles(
+          height: PosTextSize.size2,
+          bold: true,
+          align: PosAlign.right,
+        ),
+      ),
+    ]);
 
     bytes += generator.feed(1);
 
     bytes += [27, 97, 1];
-    bytes += generator.text('**********************************************');
+    bytes += generator.hr(ch: '*');
     bytes += generator.feed(1);
     bytes += generator.text(
-      'Idö : ${DateFormat('yyyy-MM-dd HH:mm:ss').format(timeNow)}',
+      'IDÖ : ${DateFormat('yyyy-MM-dd HH:mm:ss').format(timeNow)}',
       containsChinese: true,
       styles: const PosStyles(
         height: PosTextSize.size2,
@@ -927,20 +782,9 @@ class _OverviewPageState extends State<OverviewPage>
     bytes += [27, 97, 1];
     bytes += generator.text('*** Jó étvágyat kíván az ÍZGYÁR csapata! ***');
 
-    bytes += generator.feed(1);
     bytes += generator.cut();
 
-    final res = await sendPrintRequest(bytes, AppConfig.printerName);
-    String msg = "";
-
-    if (res == "success") {
-      msg = "Printed Successfully";
-    } else {
-      msg =
-          "Failed to generate a print please make sure to use the correct printer name";
-    }
-
-    log(msg);
+    await sendPrintRequest(bytes, AppConfig.printerName);
   }
 
   printReqReceipt(List<CartItem> cartItems, {String origValueRaw}) async {
@@ -1061,7 +905,7 @@ class _OverviewPageState extends State<OverviewPage>
     bytes += generator.hr(ch: "*");
     bytes += generator.feed(1);
     bytes += generator.text(
-      'Idö : ${DateFormat('yyyy-MM-dd HH:mm:ss').format(timeNow)}',
+      'IDÖ : ${DateFormat('yyyy-MM-dd HH:mm:ss').format(timeNow)}',
       containsChinese: true,
       styles: const PosStyles(
         height: PosTextSize.size2,
@@ -1074,415 +918,8 @@ class _OverviewPageState extends State<OverviewPage>
     bytes += [27, 97, 1];
     bytes += generator.text('*** Jó étvágyat kíván az ÍZGYÁR csapata! ***');
 
-    // bytes += generator.feed(1);
     bytes += generator.cut();
 
-    final res = await sendPrintRequest(bytes, AppConfig.printerName);
-    String msg = "";
-
-    if (res == "success") {
-      msg = "Printed Successfully";
-    } else {
-      msg =
-          "Failed to generate a print please make sure to use the correct printer name";
-    }
-
-    log(msg);
+    await sendPrintRequest(bytes, AppConfig.printerName);
   }
-
-  // printReq() async {
-  //   List<int> bytes = [];
-  //   final profile = await CapabilityProfile.load();
-  //   final generator = Generator(PaperSize.mm80, profile);
-
-  //   // LOGO
-  //   final Uint8List data = await loadImageFromAssets('assets/images/logo.png');
-  //   img.Image originalImage = img.decodeImage(data);
-
-  //   bytes += generator.imageRaster(originalImage, align: PosAlign.center);
-  //   bytes += generator.feed(1);
-
-  //   //GENERATE BARCODE
-  //   String invoiceNo = "322123000000";
-  //   List<int> barData =
-  //       invoiceNo.split('').map((String digit) => int.parse(digit)).toList();
-
-  //   bytes += generator.barcode(
-  //     Barcode.itf(barData),
-  //     height: 100,
-  //     textPos: BarcodeText.none,
-  //   );
-
-  //   bytes += generator.feed(1);
-
-  //   bytes += generator.text(
-  //     'INV #322123000000',
-  //     styles: const PosStyles(
-  //       align: PosAlign.center,
-  //       height: PosTextSize.size2,
-  //       width: PosTextSize.size2,
-  //     ),
-  //   );
-
-  //   bytes += generator.text('Reprinted at : 06-11-2023 07:32:52 AM');
-
-  //   bytes += generator.feed(1);
-
-  //   bytes += generator.text(
-  //     'PAID(IN)',
-  //     styles: const PosStyles(
-  //       align: PosAlign.center,
-  //       height: PosTextSize.size2,
-  //       width: PosTextSize.size2,
-  //     ),
-  //   );
-
-  //   bytes += generator.feed(1);
-
-  //   bytes += generator.text('Walk in');
-
-  //   bytes += generator.text('Tel : 0000000000');
-
-  //   bytes += generator.text('Date\\Time : Sun, 10 Sep 2023 06:24 PM');
-
-  //   bytes += generator.text('Associate : 5552');
-
-  //   bytes += generator.text('Promised On : Sun, 10 Sep 2023 06:24 PM');
-
-  //   bytes += generator.feed(1);
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.row([
-  //     PosColumn(
-  //       text: 'QTY',
-  //       width: 1,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //         bold: true,
-  //       ),
-  //     ),
-  //     PosColumn(
-  //       text: 'S/T/DESCRIPTION',
-  //       width: 8,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //         bold: true,
-  //       ),
-  //     ),
-  //     PosColumn(
-  //       text: 'TOTAL',
-  //       width: 3,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //         bold: true,
-  //       ),
-  //     ),
-  //   ]);
-
-  //   bytes += [27, 97, 1];
-  //   bytes += generator.text('-----------------------------------------');
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.text(
-  //     ' 1x  Pants (IN)                  \$ 133.40',
-  //     styles: const PosStyles(
-  //       align: PosAlign.left,
-  //       reverse: true,
-  //       bold: true,
-  //     ),
-  //   );
-
-  //   bytes += generator.feed(1);
-
-  //   bytes += [27, 97, 1];
-
-  //   //GENERATE BARCODE
-  //   bytes += generator.barcode(
-  //     Barcode.itf(
-  //       "32212300000000"
-  //           .split('')
-  //           .map((String digit) => int.parse(digit))
-  //           .toList(),
-  //     ),
-  //     height: 50,
-  //     textPos: BarcodeText.none,
-  //   );
-
-  //   bytes += generator.text("32212300000000");
-
-  //   bytes += generator.feed(1);
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.row([
-  //     PosColumn(
-  //       text: '1x',
-  //       width: 1,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //     PosColumn(
-  //       text: '(\$13.40 Growth Hem)',
-  //       width: 11,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //   ]);
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.row([
-  //     PosColumn(
-  //       text: '',
-  //       width: 1,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //     PosColumn(
-  //       text: '(Tag : (1x) Lengthen : Lengthen \$ 0.00',
-  //       width: 11,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //   ]);
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.row([
-  //     PosColumn(
-  //       text: '',
-  //       width: 1,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //     PosColumn(
-  //       text: '| (1x) Lengthen : Polo Hem \$ 0.00) |',
-  //       width: 11,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //   ]);
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.row([
-  //     PosColumn(
-  //       text: '',
-  //       width: 1,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //     PosColumn(
-  //       text: 'Dept Hem',
-  //       width: 11,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //         bold: true,
-  //       ),
-  //     ),
-  //   ]);
-
-  //   bytes += generator.feed(1);
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.text(
-  //     ' 1x  Pants (IN)                  \$ 133.40',
-  //     styles: const PosStyles(
-  //       align: PosAlign.left,
-  //       reverse: true,
-  //       bold: true,
-  //     ),
-  //   );
-
-  //   bytes += generator.feed(1);
-
-  //   bytes += [27, 97, 1];
-
-  //   //GENERATE BARCODE
-  //   bytes += generator.barcode(
-  //     Barcode.itf(
-  //       "32212300000000"
-  //           .split('')
-  //           .map((String digit) => int.parse(digit))
-  //           .toList(),
-  //     ),
-  //     height: 50,
-  //     textPos: BarcodeText.none,
-  //   );
-
-  //   bytes += generator.text("32212300000000");
-
-  //   bytes += generator.feed(1);
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.row([
-  //     PosColumn(
-  //       text: '1x',
-  //       width: 1,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //     PosColumn(
-  //       text: '(\$13.40 Growth Hem)',
-  //       width: 11,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //   ]);
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.row([
-  //     PosColumn(
-  //       text: '',
-  //       width: 1,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //     PosColumn(
-  //       text: '(Tag : (1x) Lengthen : Lengthen \$ 0.00',
-  //       width: 11,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //   ]);
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.row([
-  //     PosColumn(
-  //       text: '',
-  //       width: 1,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //     PosColumn(
-  //       text: '| (1x) Lengthen : Polo Hem \$ 0.00) |',
-  //       width: 11,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //   ]);
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.row([
-  //     PosColumn(
-  //       text: '',
-  //       width: 1,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //       ),
-  //     ),
-  //     PosColumn(
-  //       text: 'Dept Hem',
-  //       width: 11,
-  //       styles: const PosStyles(
-  //         align: PosAlign.left,
-  //         bold: true,
-  //       ),
-  //     ),
-  //   ]);
-
-  //   bytes += generator.feed(1);
-
-  //   bytes += [27, 97, 1];
-  //   bytes += generator.text('-----------------------------------------');
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.text(
-  //     'HST # : R877439000',
-  //     styles: const PosStyles(
-  //       height: PosTextSize.size1,
-  //     ),
-  //   );
-
-  //   bytes += [27, 97, 2];
-  //   bytes += generator.text('Sub Total  \$ 13.40');
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.text('Total Disc \$ 0.00');
-
-  //   bytes += [27, 97, 2];
-  //   bytes += generator.text('HST (13%)  \$ 1.74');
-
-  //   bytes += generator.feed(1);
-
-  //   bytes += [27, 97, 2];
-  //   bytes += generator.text(
-  //     'Total  \$ 15.14',
-  //     styles: const PosStyles(
-  //       height: PosTextSize.size2,
-  //       bold: true,
-  //     ),
-  //   );
-
-  //   bytes += generator.text(
-  //     'Balance Owing  \$ 0.00',
-  //     styles: const PosStyles(
-  //       height: PosTextSize.size2,
-  //       bold: true,
-  //     ),
-  //   );
-
-  //   bytes += generator.feed(1);
-
-  //   bytes += [27, 97, 1];
-  //   bytes += generator.text('Transaction details');
-  //   bytes += generator.text('*****************************************');
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.text('Tender Type :  Cash(INV)');
-  //   bytes += generator.text('Amount :  \$ 0.00');
-
-  //   bytes += [27, 97, 2];
-  //   bytes += generator.text('Total Tendered  \$ 13.40');
-  //   bytes += generator.text('Total Charge  \$ 0.00');
-  //   bytes += generator.text('Total Round Off  \$ 0.01');
-
-  //   bytes += [27, 97, 0];
-  //   bytes += generator.text('Items :  1');
-
-  //   bytes += [27, 97, 1];
-  //   bytes += generator.text(
-  //     'Production : Sun, 10 Sep 2023 09:00 AM',
-  //     styles: const PosStyles(
-  //       height: PosTextSize.size2,
-  //       bold: true,
-  //     ),
-  //   );
-
-  //   bytes += generator.feed(1);
-
-  //   bytes += [27, 97, 2];
-  //   bytes += generator.text('Points Earned Before This Visit : \$ 739.85');
-  //   bytes += generator.text('Total Points Earned :  \$ 0.57');
-
-  //   // 0 = left, center = 1 right = 2
-  //   bytes += [27, 97, 1];
-  //   bytes += generator.text('*** Store Copy ***');
-
-  //   bytes += generator.feed(1);
-  //   bytes += generator.cut();
-
-  //   print(String.fromCharCodes(bytes));
-  //   // final res = await sendPrintRequest(bytes, AppConfig.printerName);
-  //   var res = "success";
-  //   String msg = "";
-
-  //   if (res == "success") {
-  //     msg = "Printed Successfully";
-  //   } else {
-  //     msg =
-  //         "Failed to generate a print please make sure to use the correct printer name";
-  //   }
-
-  //   print(msg);
-  // }
 }
