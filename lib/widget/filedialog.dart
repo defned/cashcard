@@ -18,9 +18,17 @@ class FileDialogItem {
 
 class FileDialog extends StatefulWidget {
   final Function(FileSystemEntity) onOpen;
+  final Color actionButtonColor;
+  final Widget actionButtonChild;
   final FileDialogTarget target;
   final String title;
-  FileDialog({Key key, this.onOpen, this.title, FileDialogTarget target})
+  FileDialog(
+      {Key key,
+      this.onOpen,
+      this.title,
+      this.actionButtonChild,
+      this.actionButtonColor,
+      FileDialogTarget target})
       : target = (target == null) ? FileDialogTarget.FILE : target,
         super(key: key);
   @override
@@ -134,12 +142,13 @@ class _FileDialogState extends State<FileDialog>
     return Column(
       children: <Widget>[
         SizedBox(height: 10),
-        Text(widget.title,
-            style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).textTheme.body1.color)),
-        SizedBox(height: 15),
+        if (widget.title != null)
+          Text(widget.title,
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).textTheme.body1.color)),
+        if (widget.title != null) SizedBox(height: 15),
         Expanded(
           child: Card(
             child: ListView(
@@ -152,7 +161,10 @@ class _FileDialogState extends State<FileDialog>
           mainAxisAlignment: MainAxisAlignment.end,
           children: <Widget>[
             MaterialButton(
-              child: Text(tr('select')),
+              color: widget.actionButtonColor,
+              child: widget.actionButtonChild == null
+                  ? Text(tr('select'))
+                  : widget.actionButtonChild,
               onPressed: _onPressed,
             ),
             MaterialButton(

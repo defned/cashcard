@@ -40,6 +40,9 @@ class AppConfig {
             "parity": 0,
             "delay": 100,
           },
+          "printer": {
+            "name": "EPSON TM-T20III Receipt",
+          },
           "logging": {"filePath": "", "level": "info", "sizeLimit": 25},
           "language": "hu",
           "transformation": {"from": "^\\d{4}(.*)", "to": "\$1"}
@@ -120,6 +123,9 @@ class AppConfig {
 
   static get comDelay => _config["com"]["delay"];
   static set comDelay(int delay) => _config["com"]["delay"] = delay;
+
+  static get printerName => _config["printer"]["name"];
+  static set printerName(String name) => _config["printer"]["name"] = name;
 
   static get language => _config["language"];
   static set language(String language) => _config["language"] = language;

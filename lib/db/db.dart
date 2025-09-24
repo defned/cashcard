@@ -1,37 +1,8 @@
-import 'package:cashcard/app/app.dart';
 import 'package:cashcard/util/cart.dart';
 import 'package:cashcard/util/logging.dart';
-import 'package:flutter/material.dart';
 import 'package:mysql1/mysql1.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
-
-class DbRecordDataSource extends ChangeNotifier {
-  List<DbRecordBalance> _dbBalanceRecords = [];
-  List<DbRecordBalance> getBalanceRecords() => _dbBalanceRecords;
-  List<DbRecordProduct> _dbProductRecords = [];
-  List<DbRecordProduct> getProductRecords() => _dbProductRecords;
-
-  void init(String searchTerm) async {
-    _dbBalanceRecords = await app.db.getBalanceAll(searchTerm);
-    _dbProductRecords = await app.db.getProductAll(searchTerm);
-    notifyListeners();
-  }
-
-  void sort<T>(Comparable<T> getField(DbRecordBalance d), bool ascending) {
-    _dbBalanceRecords.sort((DbRecordBalance a, DbRecordBalance b) {
-      if (!ascending) {
-        final DbRecordBalance c = a;
-        a = b;
-        b = c;
-      }
-      final Comparable<T> aValue = getField(a);
-      final Comparable<T> bValue = getField(b);
-      return Comparable.compare(aValue, bValue);
-    });
-    notifyListeners();
-  }
-}
 
 enum DbExceptions {
   noRows,
@@ -163,7 +134,7 @@ class Db {
     try {
       await connect();
       var results = await _connection.query(
-          'select id, name, color from categroy where (name like ?) and del_sp = "0000-00-00"',
+          'select id, name, color from category where (name like ?) and del_sp = "0000-00-00"',
           ['%$searchTerm%']);
       for (int i = 0; i < results.length; i++)
         res.add(DbRecordCategory(

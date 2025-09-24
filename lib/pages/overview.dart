@@ -1,24 +1,27 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:cashcard/app/app_config.dart';
 import 'package:cashcard/db/db.dart';
 import 'package:cashcard/pages/topupdialog.dart';
 import 'package:cashcard/util/cart.dart';
 import 'package:cashcard/util/logging.dart';
+import 'package:cashcard/util/serialporthelper.dart';
+import 'package:cashcard/util/usbporthelper.dart';
 import 'package:cashcard/widget/cart.dart';
 import 'package:cashcard/widget/reportsdialog.dart';
-import 'package:path/path.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cashcard/app/app.dart';
 import 'package:cashcard/widget/products.dart';
 import 'package:cashcard/app/style.dart';
-import 'package:cashcard/main.dart';
 import 'package:cashcard/util/extensions.dart';
-import 'package:cashcard/widget/filedialog.dart';
+import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:virtual_keyboard/virtual_keyboard.dart';
+import 'package:image/image.dart' as img;
+import 'package:intl/intl.dart';
 
 class OverviewPage extends StatefulWidget {
   /// Constructor
@@ -55,14 +58,81 @@ class _OverviewPageState extends State<OverviewPage>
 
   bool isBusy = false;
 
-  Future<List<DbRecordProduct>> _dbProducts = Future.value([]);
+  List<DbRecordProduct> _dbProducts = [];
+  List<DbRecordCategory> _dbCategories = [];
+
+  /// Parse the card number from the reader's ASCII-hex payload.
+  /// Example: "41FF0000000300975EED010098" -> "9920237"
+  String parseCardNumber2(String hexData, {bool validateChecksum = true}) {
+    // Keep only hex chars
+    final cleaned = hexData.replaceAll(RegExp(r'[^0-9a-fA-F]'), '');
+    if (cleaned.isEmpty || cleaned.length.isOdd) {
+      throw ArgumentError('Invalid hex string.');
+    }
+
+    // Hex -> bytes
+    final bytes = <int>[];
+    for (var i = 0; i < cleaned.length; i += 2) {
+      bytes.add(int.parse(cleaned.substring(i, i + 2), radix: 16));
+    }
+
+    // Drop trailing CR (0x0D) if present
+    var data = bytes;
+    if (data.isNotEmpty && data.last == 0x0D) {
+      data = data.sublist(0, data.length - 1);
+    }
+
+    // Need at least [c3 c2 c1 c0 c4 r0 crc] = 7 bytes
+    if (data.length < 7) {
+      throw ArgumentError('Too few bytes for payload.');
+    }
+
+    final r0 = data[data.length - 2];
+    if (r0 != 0x00) {
+      throw StateError('r0 byte is not 0x00 (got 0x${r0.toRadixString(16)}).');
+    }
+
+    if (validateChecksum) {
+      var xor = 0;
+      for (final b in data) xor ^= b;
+      if (xor != 0) {
+        throw StateError('XOR checksum failed (overall XOR != 0).');
+      }
+    }
+
+    // c3..c0 are the 4 bytes immediately before c4,r0,crc
+    final cBytes =
+        data.sublist(data.length - 7, data.length - 3); // [c3,c2,c1,c0]
+
+    // Big-endian: c3 is MSB, c0 is LSB
+    final cardNumber =
+        (cBytes[0] << 24) | (cBytes[1] << 16) | (cBytes[2] << 8) | cBytes[3];
+
+    return cardNumber.toString();
+  }
+
+  Future<bool> _initStateAsync = Future.value(null);
 
   @override
   void initState() {
     super.initState();
-    _subscription =
-        serialPort.stream.map((data) => data.trim()).listen(loadDetails);
-    _dbProducts = app.db.getProductAll("");
+    _subscription = serialPort.stream
+        .map((data) => parseCardNumber2(data.trim()))
+        .listen(loadDetails);
+    _initStateAsync = initStateAsync();
+  }
+
+  Uint8List logo;
+  Future<Uint8List> loadImageFromAssets(String path) async {
+    final ByteData data = await rootBundle.load(path);
+    return data.buffer.asUint8List();
+  }
+
+  Future<bool> initStateAsync() async {
+    _dbProducts = await app.db.getProductAll("");
+    _dbCategories = await app.db.getCategoriesAll("");
+    logo = await loadImageFromAssets('assets/images/logo.png');
+    return Future.value(true);
   }
 
   @override
@@ -75,22 +145,12 @@ class _OverviewPageState extends State<OverviewPage>
     try {
       await app.db.pay(_cardIdFieldController.text, cart);
       showInfo(this.context, "${tr('pay')} ${tr('succeeded')}");
+      await printReqReceipt(cart, origValueRaw: _balanceFieldController.text);
       resetFields();
     } catch (e) {
       showError(this.context, tr("${e.toString()}"));
     }
   }
-
-  // topUp() async {
-  //   try {
-  //     await app.db.topUp(_cardIdFieldController.text,
-  //         int.tryParse(_propertyFieldController.text));
-  //     showInfo(this.context, "${tr('topUp')} ${tr('succeeded')}");
-  //     resetFields();
-  //   } catch (e) {
-  //     showError(this.context, tr("${e.toString()}"));
-  //   }
-  // }
 
   loadDetails(String data, {bool updateOnly = true}) async {
     if (AppConfig.transformationFrom != null) {
@@ -148,7 +208,6 @@ class _OverviewPageState extends State<OverviewPage>
   bool _validProp = false;
   double radius() => 10;
   final FocusNode cardIdFocus = FocusNode();
-  // final FocusNode _cardIdFocus = FocusNode();
   final FocusNode propertyFocus = FocusNode();
   final FocusNode _pageFocus = FocusNode();
   final FocusNode _propertyFocus = FocusNode();
@@ -160,9 +219,10 @@ class _OverviewPageState extends State<OverviewPage>
   }
 
   void _newProduct() {
-    setState(() {
-      _dbProducts = app.db.getProductAll("");
-    });
+    // setState(() {
+    // _dbProducts = app.db.getProductAll("");
+    _initStateAsync = initStateAsync();
+    // });
     resetFields();
   }
 
@@ -176,14 +236,15 @@ class _OverviewPageState extends State<OverviewPage>
               tr('title'),
               style: TextStyle(fontSize: 20),
             ),
-            Expanded(child: createInfoFields()),
-            createButton(
-              tr('topUp'),
-              color: Colors.lightBlue.shade900,
-              scale: 0.5,
-              onTap: showTopUp,
-              enabled: isTopUpButtonActive,
-            ),
+            if (isTopUpButtonActive) Expanded(child: createInfoFields()),
+            if (isTopUpButtonActive)
+              createButton(
+                tr('topUp'),
+                color: Colors.lightBlue.shade900,
+                scale: 0.6,
+                onTap: showTopUp,
+                enabled: isTopUpButtonActive,
+              ),
           ],
         ),
         actions: <Widget>[
@@ -202,51 +263,29 @@ class _OverviewPageState extends State<OverviewPage>
         autofocus: true,
         focusNode: _pageFocus,
         onKey: (event) {
-          log(event);
-          if (event is RawKeyDownEvent) {
-            // bool isCTRL = Platform.isMacOS
-            //     ? event.isMetaPressed
-            //     : event.isControlPressed || event.logicalKey.keyLabel == "9";
-
-            bool isImport = event.logicalKey.keyLabel ==
-                "i" || /* What the heck?! Flutter is buggy here ... */ event
-                    .logicalKey.keyLabel ==
-                "\\";
-            bool isExport = event.logicalKey.keyLabel ==
-                "e" || /* What the heck?! Flutter is buggy here ... */ event
-                    .logicalKey.keyLabel ==
-                "-";
-
-            if (/*isCTRL && */ isImport) {
-              showImportDialog();
-            } else if (/*isCTRL && */ isExport) {
-              showExportDialog();
-            }
-
-            // if (event.logicalKey.keyId == 54 &&
-            //     (_propertyFieldKey.currentState.value
-            //             as String)
-            //         .isNotEmpty) {
-            //   validate();
-            // }
-          }
+          log(event.character);
         },
         child: Row(
           children: <Widget>[
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
-                child: FutureBuilder<List<DbRecordProduct>>(
-                  initialData: [],
-                  future: _dbProducts,
-                  builder: (context, state) => Products(
-                    products: state.data,
-                    onNewProduct: _newProduct,
-                    onTap: (DbRecordProduct p) {
-                      log("Added to cart: $p");
-                      _addToCart(p);
-                    },
-                  ),
+                child: FutureBuilder<bool>(
+                  initialData: false,
+                  future: _initStateAsync,
+                  builder: (context, stateInitStateAsync) {
+                    if (stateInitStateAsync.data != true)
+                      return Center(child: CircularProgressIndicator());
+                    return Products(
+                      products: _dbProducts,
+                      categories: _dbCategories,
+                      onNewProduct: _newProduct,
+                      onTap: (DbRecordProduct p) {
+                        log("Added to cart: $p");
+                        _addToCart(p);
+                      },
+                    );
+                  },
                 ),
               ),
             ),
@@ -259,32 +298,40 @@ class _OverviewPageState extends State<OverviewPage>
                     cartItems: cart,
                     onTapRemoveFromCart: _removeFromCart,
                     onTapAddToCart: _addToCartByIndex,
+                    itemsChanged: cartCount,
                   ),
                 ),
-                Container(
-                  color: Colors.grey.shade900,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 15, vertical: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Összesen:',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                      color: Colors.grey.shade900,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 15, vertical: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Összesen:',
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${totalAmount.toStringAsFixed(0)} Ft',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
+                          Text(
+                            '${totalAmount.toStringAsFixed(0)} Ft',
+                            style: TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -298,6 +345,7 @@ class _OverviewPageState extends State<OverviewPage>
                         children: <Widget>[
                           createButton(
                             tr('clear'),
+                            scale: 1.0,
                             color: Colors.red.shade900,
                             enabled: isClearButtonActive,
                             onTap: () {
@@ -309,59 +357,17 @@ class _OverviewPageState extends State<OverviewPage>
                           Expanded(
                             child: createButton(
                               tr('pay'),
+                              scale: 1.0,
                               enabled: isPayButtonActive,
                               color: Colors.green,
                               onTap: pay,
                             ),
                           ),
-                          // const SizedBox(width: 15),
                         ],
                       ),
                     ],
                   ),
                 ),
-                // Expandable(
-                //   leading: const Icon(Icons.keyboard, size: 55),
-                //   // initiallyExpanded: true,
-                //   children: [
-                //     Row(
-                //       mainAxisAlignment: MainAxisAlignment.end,
-                //       children: <Widget>[
-                //         createButtons(),
-                //         const SizedBox(width: 15),
-                //       ],
-                //     ),
-                //   ],
-                //   title: Column(
-                //     mainAxisSize: MainAxisSize.min,
-                //     children: <Widget>[
-                //       Row(
-                //         mainAxisSize: MainAxisSize.max,
-                //         children: <Widget>[
-                //           createButton(
-                //             tr('clear'),
-                //             color: Colors.red.shade900,
-                //             enabled: isClearButtonActive,
-                //             onTap: () {
-                //               _clearCart();
-                //               resetFields();
-                //             },
-                //           ),
-                //           const SizedBox(width: 10),
-                //           Expanded(
-                //             child: createButton(
-                //               tr('pay'),
-                //               enabled: isPayButtonActive,
-                //               color: Colors.green,
-                //               onTap: pay,
-                //             ),
-                //           ),
-                //           const SizedBox(width: 15),
-                //         ],
-                //       ),
-                //     ],
-                //   ),
-                // ),
               ]),
             ),
           ],
@@ -380,7 +386,7 @@ class _OverviewPageState extends State<OverviewPage>
             minFontSize: 15, style: TextStyle(fontSize: 25)),
         const SizedBox(width: 10),
         SizedBox(
-          width: 200,
+          width: 175,
           child: TextFormField(
             enabled: false,
             focusNode: cardIdFocus,
@@ -416,7 +422,7 @@ class _OverviewPageState extends State<OverviewPage>
             minFontSize: 15, style: TextStyle(fontSize: 25)),
         SizedBox(width: 10),
         SizedBox(
-          width: 200,
+          width: 150,
           child: TextFormField(
             enabled: false,
             decoration: InputDecoration(
@@ -455,6 +461,7 @@ class _OverviewPageState extends State<OverviewPage>
               RawKeyboardListener(
                 focusNode: _propertyFocus,
                 onKey: (event) {
+                  print(event.character);
                   // if (event.logicalKey.keyId == 54 &&
                   //     (_propertyFieldKey.currentState.value
                   //             as String)
@@ -581,6 +588,8 @@ class _OverviewPageState extends State<OverviewPage>
 
   ////////////////////
   List<CartItem> cart = [];
+  final ValueNotifier<int> cartCount = ValueNotifier<int>(0);
+
   void _addToCart(DbRecordProduct product) {
     setState(() {
       var existingItem = cart.firstWhere(
@@ -590,6 +599,7 @@ class _OverviewPageState extends State<OverviewPage>
 
       if (existingItem.quantity == 0) {
         cart.add(CartItem(product: product, quantity: 1));
+        cartCount.value = cart.fold(0, (p, v) => p + v.quantity);
       } else {
         existingItem.quantity++;
       }
@@ -618,14 +628,16 @@ class _OverviewPageState extends State<OverviewPage>
   void _clearCart() {
     setState(() {
       cart.clear();
+      cartCount.value = cart.length;
     });
     updateButtonState();
   }
 
   void updateButtonState() {
     setState(() {
-      isPayButtonActive = isClearButtonActive = (cart.length != 0);
+      isPayButtonActive = (cart.length != 0);
       isTopUpButtonActive = _cardIdFieldController.text.isNotEmpty;
+      isClearButtonActive = isPayButtonActive || isTopUpButtonActive;
     });
   }
 
@@ -710,7 +722,7 @@ class _OverviewPageState extends State<OverviewPage>
               color: enabled ? AppColors.brightText : AppColors.disabledColor,
             ),
             maxLines: 1,
-            group: group,
+            // group: group,
           ),
         ),
       ),
@@ -724,9 +736,12 @@ class _OverviewPageState extends State<OverviewPage>
       builder: (context) {
         return TopUpDialog(
             cardId: _cardIdFieldController.text,
-            onSuccess: () {
+            onSuccess: () async {
               Navigator.pop(context);
-              loadDetails(_cardIdFieldController.text, updateOnly: true);
+              String origValue = _balanceFieldController.text;
+              await loadDetails(_cardIdFieldController.text, updateOnly: true);
+              String newValue = _balanceFieldController.text;
+              printReqTopUp(origValue, newValue);
               Future.delayed(
                   Duration(milliseconds: 250),
                   () => showInfo(
@@ -839,131 +854,635 @@ class _OverviewPageState extends State<OverviewPage>
     );
   }
 
-  showImportDialog() {
-    showDialog<void>(
-      barrierDismissible: false,
-      context: this.context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.grey.shade200,
-          content: Container(
-            width: MediaQuery.of(context).size.width / 2,
-            height: MediaQuery.of(context).size.height / 2,
-            child: Theme(
-              data: whiteTheme(),
-              child: FileDialog(
-                title: tr('importAction'),
-                onOpen: (fs) async {
-                  List<DbRecordBalance> records = [];
-                  try {
-                    records = serializeRecordsFromCSV(fs);
-                    await app.db.insertBalances(records);
-                    showInfo(this.context,
-                        "${tr('importAction')} ${tr('succeeded')} ${records.length}/${records.length}");
-                  } catch (e) {
-                    showError(
-                        this.context, "${tr('importAction')} ${tr('failed')}");
-                  }
-                },
-              ),
-            ),
-          ),
-        );
-      },
+  // 0 = left, center = 1 right = 2
+  printReqTopUp(String origValueRaw, String newValueRaw) async {
+    int origValue = int.parse(origValueRaw.replaceAll(" Ft", ""));
+    int newValue = int.parse(newValueRaw.replaceAll(" Ft", ""));
+    var timeNow = DateTime.now();
+    List<int> bytes = [];
+
+    final profile = await CapabilityProfile.load();
+    final generator = Generator(PaperSize.mm80, profile);
+
+    // LOGO
+    img.Image originalImage = img.decodeImage(logo);
+
+    bytes += generator.imageRaster(originalImage, align: PosAlign.center);
+    bytes += generator.feed(1);
+
+    bytes += generator.text(
+      'SIKERES FELTÖLTÉS!',
+      containsChinese: true,
+      styles: const PosStyles(
+        align: PosAlign.center,
+        height: PosTextSize.size2,
+        width: PosTextSize.size2,
+      ),
     );
-  }
 
-  showExportDialog() {
-    final DbRecordDataSource _dbRecordsDataSource = DbRecordDataSource()
-      ..init("");
-    showDialog<void>(
-      barrierDismissible: false,
-      context: this.context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.grey.shade200,
-          content: Container(
-            width: MediaQuery.of(context).size.width / 2,
-            height: MediaQuery.of(context).size.height / 2,
-            child: Theme(
-              data: whiteTheme(),
-              child: FileDialog(
-                title: tr('exportAction'),
-                target: FileDialogTarget.DIRECTORY,
-                onOpen: (dir) async {
-                  List<DbRecordBalance> records =
-                      _dbRecordsDataSource.getBalanceRecords();
-                  String serializedRecords =
-                      serializeRecordsIntoCSV(records).join("\n");
-                  File exportFile = File(join(dir.absolute.path,
-                      "export-${DateTime.now().toIso8601String().replaceAll(".", "").replaceAll(":", "").replaceAll("-", "").replaceAll(" ", "")}.csv"));
-                  exportFile.writeAsStringSync(serializedRecords);
-                  log("Export succeeded to '${exportFile.absolute.path}'");
-                  showInfo(this.context,
-                      "${tr('exportAction')} ${tr('succeeded')} ${records.length}/${records.length}");
-                },
-              ),
-            ),
-          ),
-        );
-      },
+    bytes += generator.feed(1);
+    bytes += generator.feed(1);
+
+    bytes += [27, 97, 1];
+    bytes += generator.text('---- NEM ADÓÜGYI BIZONYLAT ----');
+    bytes += generator.feed(1);
+    bytes += generator.text('Nyugta részletezö');
+    bytes += generator.text('----------------------------------------------');
+
+    bytes += [27, 97, 2];
+    bytes += generator.text('Feltöltés elötti egyenleg  $origValue Ft',
+        containsChinese: true);
+    bytes += generator.text('Feltötött összeg  ${newValue - origValue} Ft',
+        containsChinese: true);
+
+    bytes += [27, 97, 1];
+    bytes += generator.text('----------------------------------------------');
+
+    bytes += [27, 97, 2];
+    bytes += generator.text(
+      'Új egyenleg  $newValue Ft',
+      containsChinese: true,
+      styles: const PosStyles(
+        height: PosTextSize.size2,
+        bold: true,
+      ),
     );
-  }
 
-  List<DbRecordBalance> serializeRecordsFromCSV(FileSystemEntity fs) {
-    if (fs is! File) throw tr('invalidImportSource');
+    bytes += generator.feed(1);
 
-    List<String> lines = (fs as File).readAsLinesSync();
-    String firstLine = lines.first.toUpperCase();
-    Map<String, int> columnIds = {
-      'ID': 0,
-      'BALANCE': 0,
-    };
-    if (!firstLine.contains(';')) throw tr('invalidImportFormat');
+    bytes += [27, 97, 1];
+    bytes += generator.text('**********************************************');
+    bytes += generator.feed(1);
+    bytes += generator.text(
+      'Idö : ${DateFormat('yyyy-MM-dd HH:mm:ss').format(timeNow)}',
+      containsChinese: true,
+      styles: const PosStyles(
+        height: PosTextSize.size2,
+        bold: true,
+      ),
+    );
 
-    // Remapping indexes if needed
-    List<String> header = firstLine.split(';');
-    bool hasHeader = false;
-    if (firstLine.contains('ID')) {
-      columnIds['ID'] = header.indexOf('ID');
-      columnIds['BALANCE'] = header.indexOf('BALANCE');
-      hasHeader = true;
+    bytes += generator.feed(1);
+
+    bytes += [27, 97, 1];
+    bytes += generator.text('*** Jó étvágyat kíván az ÍZGYÁR csapata! ***');
+
+    bytes += generator.feed(1);
+    bytes += generator.cut();
+
+    final res = await sendPrintRequest(bytes, AppConfig.printerName);
+    String msg = "";
+
+    if (res == "success") {
+      msg = "Printed Successfully";
+    } else {
+      msg =
+          "Failed to generate a print please make sure to use the correct printer name";
     }
 
-    List<DbRecordBalance> res = [];
-    for (var i = hasHeader ? 1 : 0; i < lines.length; i++) {
-      List<String> splitted = lines[i].split(';');
-      if (splitted.length != header.length) {
-        log(tr('malformedInput'));
-        continue;
-      }
+    log(msg);
+  }
 
-      if (splitted[columnIds['ID']].isEmpty) {
-        log("Skipped record due to missing or empty property '${[
-          splitted[columnIds['ID']]
-        ]}'");
-        continue;
-      }
+  printReqReceipt(List<CartItem> cartItems, {String origValueRaw}) async {
+    int origValue = int.tryParse(origValueRaw.replaceAll(" Ft", ""));
+    print(origValue);
+    var timeNow = DateTime.now();
+    List<int> bytes = [];
 
-      res.add(DbRecordBalance(
-        splitted[columnIds['ID']],
-        columnIds['BALANCE'] == -1
-            ? null
-            : int.tryParse(splitted[columnIds['BALANCE']]),
-      ));
+    final profile = await CapabilityProfile.load();
+    final generator = Generator(PaperSize.mm80, profile);
+
+    // LOGO
+    img.Image originalImage = img.decodeImage(logo);
+
+    bytes += generator.imageRaster(originalImage, align: PosAlign.center);
+    bytes += generator.feed(1);
+
+    bytes += generator.text(
+      'NYUGTA',
+      containsChinese: true,
+      styles: const PosStyles(
+        align: PosAlign.center,
+        height: PosTextSize.size2,
+        width: PosTextSize.size2,
+      ),
+    );
+
+    bytes += generator.feed(1);
+    bytes += generator.feed(1);
+
+    bytes += [27, 97, 1];
+    bytes += generator.text('---- NEM ADÓÜGYI BIZONYLAT ----');
+    bytes += generator.feed(1);
+    bytes += generator.text('Nyugta részletezö');
+    bytes += generator.hr();
+
+    int sum = 0;
+    for (CartItem item in cartItems) {
+      sum += item.product.priceHuf * item.quantity;
+
+      bytes += generator.row([
+        PosColumn(
+          width: 8,
+          text: "${item.product.name} ${item.quantity}db",
+          containsChinese: true,
+          styles: const PosStyles(
+            align: PosAlign.left,
+          ),
+        ),
+        PosColumn(
+          width: 4,
+          text: (item.quantity == 1)
+              ? "${item.product.priceHuf * item.quantity} Ft"
+              : "",
+          styles: const PosStyles(
+            align: PosAlign.right,
+          ),
+        ),
+      ]);
+
+      if (item.quantity > 1) {
+        bytes += generator.row([
+          PosColumn(
+            width: 8,
+            text: "      ${item.quantity}db * ${item.product.priceHuf} Ft",
+            containsChinese: true,
+            styles: const PosStyles(
+              align: PosAlign.left,
+            ),
+          ),
+          PosColumn(
+            width: 4,
+            text: "${item.product.priceHuf * item.quantity} Ft",
+            styles: const PosStyles(
+              align: PosAlign.right,
+            ),
+          ),
+        ]);
+      }
     }
 
-    return res;
+    bytes += generator.hr();
+    bytes += generator.row([
+      PosColumn(
+        width: 8,
+        text: "ÖSSZEG:",
+        containsChinese: true,
+        styles: const PosStyles(
+          height: PosTextSize.size2,
+          bold: true,
+          align: PosAlign.left,
+        ),
+      ),
+      PosColumn(
+        width: 4,
+        text: "$sum Ft",
+        styles: const PosStyles(
+          height: PosTextSize.size2,
+          bold: true,
+          align: PosAlign.right,
+        ),
+      ),
+    ]);
+
+    if (origValue != null) {
+      bytes += generator.feed(1);
+      bytes += generator.feed(1);
+      bytes += [27, 97, 2];
+      bytes += generator.text('Vásárlás elötti egyenleg  $origValue Ft',
+          containsChinese: true);
+      bytes += generator.text('Fennmaradó egyenleg  ${origValue - sum} Ft',
+          containsChinese: true);
+    }
+
+    bytes += generator.feed(1);
+
+    bytes += [27, 97, 1];
+    bytes += generator.hr(ch: "*");
+    bytes += generator.feed(1);
+    bytes += generator.text(
+      'Idö : ${DateFormat('yyyy-MM-dd HH:mm:ss').format(timeNow)}',
+      containsChinese: true,
+      styles: const PosStyles(
+        height: PosTextSize.size2,
+        bold: true,
+      ),
+    );
+
+    bytes += generator.feed(1);
+
+    bytes += [27, 97, 1];
+    bytes += generator.text('*** Jó étvágyat kíván az ÍZGYÁR csapata! ***');
+
+    // bytes += generator.feed(1);
+    bytes += generator.cut();
+
+    final res = await sendPrintRequest(bytes, AppConfig.printerName);
+    String msg = "";
+
+    if (res == "success") {
+      msg = "Printed Successfully";
+    } else {
+      msg =
+          "Failed to generate a print please make sure to use the correct printer name";
+    }
+
+    log(msg);
   }
 
-  List<String> serializeRecordsIntoCSV(List<DbRecordBalance> records) {
-    const String SEP = ";";
+  // printReq() async {
+  //   List<int> bytes = [];
+  //   final profile = await CapabilityProfile.load();
+  //   final generator = Generator(PaperSize.mm80, profile);
 
-    List<String> res = ['ID${SEP}BALANCE$SEP'];
-    records.forEach((record) {
-      res.add("${record.id}$SEP${record.balance}$SEP");
-    });
+  //   // LOGO
+  //   final Uint8List data = await loadImageFromAssets('assets/images/logo.png');
+  //   img.Image originalImage = img.decodeImage(data);
 
-    return res;
-  }
+  //   bytes += generator.imageRaster(originalImage, align: PosAlign.center);
+  //   bytes += generator.feed(1);
+
+  //   //GENERATE BARCODE
+  //   String invoiceNo = "322123000000";
+  //   List<int> barData =
+  //       invoiceNo.split('').map((String digit) => int.parse(digit)).toList();
+
+  //   bytes += generator.barcode(
+  //     Barcode.itf(barData),
+  //     height: 100,
+  //     textPos: BarcodeText.none,
+  //   );
+
+  //   bytes += generator.feed(1);
+
+  //   bytes += generator.text(
+  //     'INV #322123000000',
+  //     styles: const PosStyles(
+  //       align: PosAlign.center,
+  //       height: PosTextSize.size2,
+  //       width: PosTextSize.size2,
+  //     ),
+  //   );
+
+  //   bytes += generator.text('Reprinted at : 06-11-2023 07:32:52 AM');
+
+  //   bytes += generator.feed(1);
+
+  //   bytes += generator.text(
+  //     'PAID(IN)',
+  //     styles: const PosStyles(
+  //       align: PosAlign.center,
+  //       height: PosTextSize.size2,
+  //       width: PosTextSize.size2,
+  //     ),
+  //   );
+
+  //   bytes += generator.feed(1);
+
+  //   bytes += generator.text('Walk in');
+
+  //   bytes += generator.text('Tel : 0000000000');
+
+  //   bytes += generator.text('Date\\Time : Sun, 10 Sep 2023 06:24 PM');
+
+  //   bytes += generator.text('Associate : 5552');
+
+  //   bytes += generator.text('Promised On : Sun, 10 Sep 2023 06:24 PM');
+
+  //   bytes += generator.feed(1);
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.row([
+  //     PosColumn(
+  //       text: 'QTY',
+  //       width: 1,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //         bold: true,
+  //       ),
+  //     ),
+  //     PosColumn(
+  //       text: 'S/T/DESCRIPTION',
+  //       width: 8,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //         bold: true,
+  //       ),
+  //     ),
+  //     PosColumn(
+  //       text: 'TOTAL',
+  //       width: 3,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //         bold: true,
+  //       ),
+  //     ),
+  //   ]);
+
+  //   bytes += [27, 97, 1];
+  //   bytes += generator.text('-----------------------------------------');
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.text(
+  //     ' 1x  Pants (IN)                  \$ 133.40',
+  //     styles: const PosStyles(
+  //       align: PosAlign.left,
+  //       reverse: true,
+  //       bold: true,
+  //     ),
+  //   );
+
+  //   bytes += generator.feed(1);
+
+  //   bytes += [27, 97, 1];
+
+  //   //GENERATE BARCODE
+  //   bytes += generator.barcode(
+  //     Barcode.itf(
+  //       "32212300000000"
+  //           .split('')
+  //           .map((String digit) => int.parse(digit))
+  //           .toList(),
+  //     ),
+  //     height: 50,
+  //     textPos: BarcodeText.none,
+  //   );
+
+  //   bytes += generator.text("32212300000000");
+
+  //   bytes += generator.feed(1);
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.row([
+  //     PosColumn(
+  //       text: '1x',
+  //       width: 1,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //     PosColumn(
+  //       text: '(\$13.40 Growth Hem)',
+  //       width: 11,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //   ]);
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.row([
+  //     PosColumn(
+  //       text: '',
+  //       width: 1,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //     PosColumn(
+  //       text: '(Tag : (1x) Lengthen : Lengthen \$ 0.00',
+  //       width: 11,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //   ]);
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.row([
+  //     PosColumn(
+  //       text: '',
+  //       width: 1,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //     PosColumn(
+  //       text: '| (1x) Lengthen : Polo Hem \$ 0.00) |',
+  //       width: 11,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //   ]);
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.row([
+  //     PosColumn(
+  //       text: '',
+  //       width: 1,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //     PosColumn(
+  //       text: 'Dept Hem',
+  //       width: 11,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //         bold: true,
+  //       ),
+  //     ),
+  //   ]);
+
+  //   bytes += generator.feed(1);
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.text(
+  //     ' 1x  Pants (IN)                  \$ 133.40',
+  //     styles: const PosStyles(
+  //       align: PosAlign.left,
+  //       reverse: true,
+  //       bold: true,
+  //     ),
+  //   );
+
+  //   bytes += generator.feed(1);
+
+  //   bytes += [27, 97, 1];
+
+  //   //GENERATE BARCODE
+  //   bytes += generator.barcode(
+  //     Barcode.itf(
+  //       "32212300000000"
+  //           .split('')
+  //           .map((String digit) => int.parse(digit))
+  //           .toList(),
+  //     ),
+  //     height: 50,
+  //     textPos: BarcodeText.none,
+  //   );
+
+  //   bytes += generator.text("32212300000000");
+
+  //   bytes += generator.feed(1);
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.row([
+  //     PosColumn(
+  //       text: '1x',
+  //       width: 1,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //     PosColumn(
+  //       text: '(\$13.40 Growth Hem)',
+  //       width: 11,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //   ]);
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.row([
+  //     PosColumn(
+  //       text: '',
+  //       width: 1,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //     PosColumn(
+  //       text: '(Tag : (1x) Lengthen : Lengthen \$ 0.00',
+  //       width: 11,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //   ]);
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.row([
+  //     PosColumn(
+  //       text: '',
+  //       width: 1,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //     PosColumn(
+  //       text: '| (1x) Lengthen : Polo Hem \$ 0.00) |',
+  //       width: 11,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //   ]);
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.row([
+  //     PosColumn(
+  //       text: '',
+  //       width: 1,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //       ),
+  //     ),
+  //     PosColumn(
+  //       text: 'Dept Hem',
+  //       width: 11,
+  //       styles: const PosStyles(
+  //         align: PosAlign.left,
+  //         bold: true,
+  //       ),
+  //     ),
+  //   ]);
+
+  //   bytes += generator.feed(1);
+
+  //   bytes += [27, 97, 1];
+  //   bytes += generator.text('-----------------------------------------');
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.text(
+  //     'HST # : R877439000',
+  //     styles: const PosStyles(
+  //       height: PosTextSize.size1,
+  //     ),
+  //   );
+
+  //   bytes += [27, 97, 2];
+  //   bytes += generator.text('Sub Total  \$ 13.40');
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.text('Total Disc \$ 0.00');
+
+  //   bytes += [27, 97, 2];
+  //   bytes += generator.text('HST (13%)  \$ 1.74');
+
+  //   bytes += generator.feed(1);
+
+  //   bytes += [27, 97, 2];
+  //   bytes += generator.text(
+  //     'Total  \$ 15.14',
+  //     styles: const PosStyles(
+  //       height: PosTextSize.size2,
+  //       bold: true,
+  //     ),
+  //   );
+
+  //   bytes += generator.text(
+  //     'Balance Owing  \$ 0.00',
+  //     styles: const PosStyles(
+  //       height: PosTextSize.size2,
+  //       bold: true,
+  //     ),
+  //   );
+
+  //   bytes += generator.feed(1);
+
+  //   bytes += [27, 97, 1];
+  //   bytes += generator.text('Transaction details');
+  //   bytes += generator.text('*****************************************');
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.text('Tender Type :  Cash(INV)');
+  //   bytes += generator.text('Amount :  \$ 0.00');
+
+  //   bytes += [27, 97, 2];
+  //   bytes += generator.text('Total Tendered  \$ 13.40');
+  //   bytes += generator.text('Total Charge  \$ 0.00');
+  //   bytes += generator.text('Total Round Off  \$ 0.01');
+
+  //   bytes += [27, 97, 0];
+  //   bytes += generator.text('Items :  1');
+
+  //   bytes += [27, 97, 1];
+  //   bytes += generator.text(
+  //     'Production : Sun, 10 Sep 2023 09:00 AM',
+  //     styles: const PosStyles(
+  //       height: PosTextSize.size2,
+  //       bold: true,
+  //     ),
+  //   );
+
+  //   bytes += generator.feed(1);
+
+  //   bytes += [27, 97, 2];
+  //   bytes += generator.text('Points Earned Before This Visit : \$ 739.85');
+  //   bytes += generator.text('Total Points Earned :  \$ 0.57');
+
+  //   // 0 = left, center = 1 right = 2
+  //   bytes += [27, 97, 1];
+  //   bytes += generator.text('*** Store Copy ***');
+
+  //   bytes += generator.feed(1);
+  //   bytes += generator.cut();
+
+  //   print(String.fromCharCodes(bytes));
+  //   // final res = await sendPrintRequest(bytes, AppConfig.printerName);
+  //   var res = "success";
+  //   String msg = "";
+
+  //   if (res == "success") {
+  //     msg = "Printed Successfully";
+  //   } else {
+  //     msg =
+  //         "Failed to generate a print please make sure to use the correct printer name";
+  //   }
+
+  //   print(msg);
+  // }
 }

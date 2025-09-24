@@ -12,8 +12,14 @@ class Products extends StatefulWidget {
   final Function onTap;
   final Function onNewProduct;
   final List<DbRecordProduct> products;
-  Products({Key key, this.products, this.onTap, this.onNewProduct})
-      : super(key: key);
+  final List<DbRecordCategory> categories;
+  Products({
+    Key key,
+    this.products,
+    this.categories,
+    this.onTap,
+    this.onNewProduct,
+  }) : super(key: key);
 
   @override
   _ProductsState createState() => _ProductsState();
@@ -25,50 +31,18 @@ class _ProductsState extends State<Products>
   AutoSizeGroup _groupPrice = AutoSizeGroup();
   TabController _tabController;
   DbRecordProduct _refData;
+
+  int searchCategory;
+  String searchQuery = "";
+  List<DbRecordProduct> selectedProducts = [];
+
+  List<DbRecordProduct> baseProducts = [];
+  List<DbRecordCategory> baseCategories = [];
   HashMap<int, List<DbRecordProduct>> grouppedProducts = HashMap();
-  List<DbRecordCategory> categories = [];
 
   @override
   void didUpdateWidget(covariant Products oldWidget) {
-    if (widget.products != null &&
-        oldWidget.products.length != widget.products.length) {
-      widget.products.sort((DbRecordProduct a, DbRecordProduct b) {
-        if (a.favourite && !b.favourite)
-          return -1;
-        else if (!a.favourite && b.favourite) return 1;
-
-        return Comparable.compare(a.name, b.name);
-      });
-
-      grouppedProducts = HashMap();
-      for (var p in widget.products) {
-        grouppedProducts.putIfAbsent(p.category.id, () => []).add(p);
-        // all
-        products = grouppedProducts.putIfAbsent(null, () => []);
-        products.add(p);
-        // favs
-        if (p.favourite) grouppedProducts.putIfAbsent(-1, () => []).add(p);
-      }
-
-      categories = [];
-      categories.addAll([
-        DbRecordCategory(null, tr("all"), "#000000"),
-        DbRecordCategory(-1, tr("favourites"), "#123123"),
-      ]);
-      for (var k in grouppedProducts.keys) {
-        if (k != null && k != -1)
-          categories.add(grouppedProducts[k].first.category);
-      }
-
-      // Find the longest string
-      for (var item in widget.products) {
-        if (_refData == null)
-          _refData = item;
-        else {
-          if (_refData.name.length < item.name.length) _refData = item;
-        }
-      }
-    }
+    prepareVars();
     super.didUpdateWidget(oldWidget);
   }
 
@@ -82,6 +56,52 @@ class _ProductsState extends State<Products>
     _propertyFieldController.addListener(_setState);
     _tabController =
         TabController(length: grouppedProducts.keys.length, vsync: this);
+    prepareVars();
+    selectedProducts = grouppedProducts[null];
+  }
+
+  void prepareVars() {
+    if (widget.products != null) {
+      baseProducts.clear();
+      baseProducts.addAll(widget.products);
+
+      baseProducts.sort((DbRecordProduct a, DbRecordProduct b) {
+        if (a.favourite && !b.favourite)
+          return -1;
+        else if (!a.favourite && b.favourite) return 1;
+
+        return Comparable.compare(a.name, b.name);
+      });
+
+      grouppedProducts = HashMap();
+      for (var p in baseProducts) {
+        grouppedProducts.putIfAbsent(p.category.id, () => []).add(p);
+        // all
+        grouppedProducts.putIfAbsent(null, () => []).add(p);
+        // favs
+        if (p.favourite) grouppedProducts.putIfAbsent(-1, () => []).add(p);
+      }
+      // Find the longest string
+      for (var item in baseProducts) {
+        if (_refData == null)
+          _refData = item;
+        else {
+          if (_refData.name.length < item.name.length) _refData = item;
+        }
+      }
+
+      baseCategories = [];
+      baseCategories.addAll([
+        DbRecordCategory(null, "", "#000000"),
+        DbRecordCategory(-1, "", "#123123"),
+      ]);
+      if (widget.categories != null) {
+        for (var k in widget.categories)
+          if (grouppedProducts.containsKey(k.id) &&
+              grouppedProducts[k.id].length > 0) baseCategories.add(k);
+      }
+      // selectedGroupId = widget.categories.first.id;
+    }
   }
 
   @override
@@ -91,130 +111,150 @@ class _ProductsState extends State<Products>
     super.dispose();
   }
 
-  int searchCategory = null;
-  String searchQuery = "";
-  List<DbRecordProduct> products = [];
+  final _formKey = GlobalKey<FormState>();
+  int selectedGroupId;
 
   void _showNewProductDialog(String barcode) {
     String code = barcode;
     String name = '';
     int price = 0;
     bool favourite = false;
-    int selectedGroupId;
 
     showDialog(
       context: context,
       builder: (context) => Theme(
         data: ThemeData.light(),
         child: AlertDialog(
+          backgroundColor: Colors.grey.shade200,
           title: Text('Új termék felvétele'),
-          content: StatefulBuilder(
-            builder: (context, setDialogState) => Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  decoration: InputDecoration(labelText: 'Vonalkód'),
-                  controller: TextEditingController(text: code),
-                  onChanged: (value) => code = value,
-                  // enabled: false,
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Termék neve'),
-                  onChanged: (value) => name = value,
-                  autofocus: true,
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Ár (Ft)'),
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) => price = int.tryParse(value) ?? 0,
-                ),
-                Row(
-                  children: <Widget>[
-                    Text("Kedvenc"),
-                    StatefulBuilder(builder: (context, setState) {
-                      return Checkbox(
-                        value: favourite,
-                        // decoration: InputDecoration(labelText: 'Ár (Ft)'),
-                        // keyboardType: TextInputType.number,
-                        onChanged: (value) => setState(() {
-                          favourite = value;
+          content: Container(
+            width: MediaQuery.of(context).size.width / 2,
+            child: StatefulBuilder(
+              builder: (context, setDialogState) => Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      decoration: InputDecoration(labelText: 'Vonalkód'),
+                      controller: TextEditingController(text: code),
+                      onChanged: (value) => code = value,
+                      // enabled: false,
+                    ),
+                    TextFormField(
+                      decoration: InputDecoration(labelText: 'Termék neve'),
+                      onChanged: (value) => name = value,
+                      autofocus: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Kérlek írj be érvényes termék nevet';
+                        }
+                        return null;
+                      },
+                    ),
+                    TextFormField(
+                      decoration: InputDecoration(labelText: 'Ár (Ft)'),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) => price = int.tryParse(value) ?? 0,
+                      validator: (value) {
+                        var parsedValue = int.tryParse(value);
+                        if (parsedValue == null || parsedValue < 0) {
+                          return 'Kérlek írj be érvényes árat';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: <Widget>[
+                        Text("Kedvenc"),
+                        StatefulBuilder(builder: (context, setState) {
+                          return Checkbox(
+                            value: favourite,
+                            onChanged: (value) => setState(() {
+                              favourite = value;
+                            }),
+                          );
                         }),
-                      );
-                    }),
+                      ],
+                    ),
+                    DropdownButtonFormField<int>(
+                      hint: Text('Válassz csoportot'),
+                      value: selectedGroupId,
+                      isExpanded: true,
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Kérlek válassz egy csoportot';
+                        }
+                        return null;
+                      },
+                      items: widget.categories.map((group) {
+                        return DropdownMenuItem<int>(
+                          value: group.id,
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 20,
+                                height: 20,
+                                color: Color(
+                                  int.parse(
+                                      group.color.replaceAll('#', '0xFF')),
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              Text(group.name),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedGroupId = value;
+                        });
+                      },
+                    ),
                   ],
                 ),
-                SizedBox(height: 10),
-                DropdownButton<int>(
-                  hint: Text('Válassz csoportot'),
-                  value: selectedGroupId,
-                  isExpanded: true,
-                  items: categories
-                      .where((c) => (c.id != null && c.id >= 0))
-                      .map((group) {
-                    return DropdownMenuItem<int>(
-                      value: group.id,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 20,
-                            height: 20,
-                            color: Color(
-                              int.parse(group.color.replaceAll('#', '0xFF')),
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Text(group.name),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setDialogState(() {
-                      selectedGroupId = value;
-                    });
-                  },
-                ),
-              ],
+              ),
             ),
           ),
           actions: [
             MaterialButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Mégse'),
-            ),
-            MaterialButton(
               onPressed: () async {
-                if (name.isNotEmpty && price > 0) {
-                  try {
-                    await app.db.registerProduct(code == "" ? null : code, name,
-                        price, favourite, selectedGroupId);
-                    showInfo(this.context,
-                        "${tr('createProductAction')} ${tr('succeeded')}");
-                    Future.delayed(Duration(milliseconds: 2000), () {
-                      Navigator.of(context).pop();
-                      widget.onNewProduct();
-                    });
-                  } catch (e) {
-                    showError(this.context,
-                        "${tr('createProductAction')} ${tr('failed')}: $e");
+                // Validate returns true if the form is valid, or false otherwise.
+                if (_formKey.currentState != null &&
+                    _formKey.currentState.validate()) {
+                  if (name.isNotEmpty && price > 0) {
+                    try {
+                      await app.db.registerProduct(code == "" ? null : code,
+                          name, price, favourite, selectedGroupId);
+                      showInfo(this.context,
+                          "${tr('createProductAction')} ${tr('succeeded')}");
+                      Future.delayed(Duration(milliseconds: 2000), () {
+                        Navigator.of(context).pop();
+                        widget.onNewProduct();
+                      });
+                    } catch (e) {
+                      showError(this.context,
+                          "${tr('createProductAction')} ${tr('failed')}: $e");
+                    }
                   }
                 }
-                // if (name.isNotEmpty && price > 0) {
-                //   try {
-                //     final conn = await DatabaseService.getConnection();
-                //     await conn.query(
-                //       'INSERT INTO products (barcode, name, price, group_id) VALUES (?, ?, ?, ?)',
-                //       [barcode, name, price, selectedGroupId],
-                //     );
-                //     Navigator.pop(context);
-                //     _loadProducts();
-                //     _processBarcodeRead(barcode);
-                //   } catch (e) {
-                //     _showError('Termék mentési hiba: $e');
-                //   }
-                // }
               },
-              child: Text('Mentés'),
+              color: Colors.green,
+              child: Row(
+                children: <Widget>[
+                  Icon(Icons.save, color: Colors.black),
+                  Text(
+                    'Mentés',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ],
+              ),
+            ),
+            MaterialButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(tr('close')),
             ),
           ],
         ),
@@ -231,28 +271,35 @@ class _ProductsState extends State<Products>
           children: <Widget>[
             ActionChip(
                 shape: RoundedRectangleBorder(
-                    side: BorderSide(
-                      width: 3,
-                      color: AppColors.brightText,
-                    ),
-                    borderRadius: BorderRadius.circular(10)),
-                label: Text("+", style: TextStyle(fontSize: 26)),
+                  side: BorderSide(width: 3, color: AppColors.brightText),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                label: Text("+", style: TextStyle(fontSize: 32)),
                 backgroundColor: Colors.green.withAlpha(100),
                 onPressed: () {
                   _showNewProductDialog("");
                 }),
-            const SizedBox(width: 5),
+            const SizedBox(width: 15),
             Expanded(child: createBalanceInput()),
             const SizedBox(width: 50),
           ],
         ),
+        const SizedBox(height: 10),
         Container(
-          height: 60,
+          height: 65,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            children: categories.map((category) {
+            children: baseCategories.map((category) {
+              Widget label =
+                  Text(category.name, style: TextStyle(fontSize: 22));
+              if (category.id == null)
+                label = Text(tr("all"), style: TextStyle(fontSize: 22));
+              else if (category.id == -1)
+                label = Icon(Icons.star,
+                    color: Colors.orange.withAlpha(200), size: 28);
+
               return Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(4.0),
                 child: ActionChip(
                     shape: RoundedRectangleBorder(
                         side: BorderSide(
@@ -262,7 +309,8 @@ class _ProductsState extends State<Products>
                               : AppColors.disabledColor,
                         ),
                         borderRadius: BorderRadius.circular(10)),
-                    label: Text(category.name),
+                    label:
+                        Padding(padding: const EdgeInsets.all(8), child: label),
                     backgroundColor:
                         Color(int.parse(category.color.replaceAll('#', '0xFF')))
                             .withAlpha(100),
@@ -270,13 +318,14 @@ class _ProductsState extends State<Products>
                       // print("Category selected ${category.id}");
                       setState(() {
                         searchCategory = category.id;
-                        products = grouppedProducts[category.id];
+                        selectedProducts = grouppedProducts[category.id];
                       });
                     }),
               );
             }).toList(),
           ),
         ),
+        const SizedBox(height: 10),
         Expanded(
           child: SingleChildScrollView(
             scrollDirection: Axis.vertical,
@@ -284,7 +333,7 @@ class _ProductsState extends State<Products>
               runSpacing: 15,
               spacing: 15,
               direction: Axis.horizontal,
-              children: products.where((p) {
+              children: selectedProducts.where((p) {
                 bool res = true;
                 if (_propertyFieldController.text != "" &&
                     !(p.name.toLowerCase().contains(
@@ -387,8 +436,8 @@ class ProductCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
               color: data.favourite
-                  ? Colors.green.shade900.withOpacity(0.5)
-                  : Colors.black,
+                  ? Colors.green.shade900.withAlpha(100)
+                  : Colors.grey.shade900,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 width: 3,
@@ -404,10 +453,12 @@ class ProductCard extends StatelessWidget {
                       child: AutoSizeText(
                           refData == null ? data.name : refData.name,
                           maxLines: 2,
-                          wrapWords: false,
+                          wrapWords: true,
+                          softWrap: true,
                           textAlign: TextAlign.center,
+                          minFontSize: 20,
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 32,
                             color: Colors.transparent,
                           ),
                           group: groupName),
@@ -415,10 +466,12 @@ class ProductCard extends StatelessWidget {
                     Center(
                       child: AutoSizeText(data.name,
                           maxLines: 2,
-                          wrapWords: false,
+                          wrapWords: true,
+                          softWrap: true,
                           textAlign: TextAlign.center,
+                          minFontSize: 20,
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 32,
                             color: AppColors.brightText,
                           ),
                           group: groupName),
@@ -432,7 +485,7 @@ class ProductCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
-                      color: AppColors.brightText,
+                      color: Colors.grey.shade100,
                     ),
                     group: groupPrice),
               ],

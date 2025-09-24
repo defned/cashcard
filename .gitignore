@@ -7,6 +7,7 @@
 android/
 build/
 ios/
+blobs/usb_esc_printer_windows/build
 packages
 .flutter-plugins
 # Since the current expectation is that clients are using Flutter head,
