@@ -1,4 +1,5 @@
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:cashcard/app/app_config.dart';
 import 'package:cashcard/app/style.dart';
 import 'package:cashcard/util/extensions.dart';
 import 'package:cashcard/app/app.dart';
@@ -117,6 +118,54 @@ class _TopUpDialogState extends State<TopUpDialog>
     });
   }
 
+  Map<int, int> loyaltyLevels = {};
+  @override
+  void initState() {
+    var loyaltyConfig = AppConfig.loyaltyTopUpBonusLevels != null
+        ? (AppConfig.loyaltyTopUpBonusLevels as Map<String, dynamic>)
+        : null;
+    for (var key in loyaltyConfig.keys) {
+      int level = int.tryParse(key);
+      if (level != null) {
+        if (loyaltyConfig[key] is int) {
+          int value = loyaltyConfig[key] as int;
+          loyaltyLevels[level] = value;
+        }
+      }
+    }
+    super.initState();
+  }
+
+  int bonus = 0;
+  List<Widget> _displayBonus() {
+    if (loyaltyLevels.length > 0) {
+      int topUpValue = int.tryParse(_propertyFieldController.text);
+      if (topUpValue != null) {
+        var bonusKey = loyaltyLevels.keys
+            .toList()
+            .reversed
+            .firstWhere((v) => v <= topUpValue, orElse: () => null);
+        if (bonusKey != null) {
+          bonus = loyaltyLevels[bonusKey];
+        }
+      }
+    }
+    if (bonus > 0) {
+      return [
+        Spacer(),
+        Text(
+          " +$bonus Ft",
+          style: TextStyle(
+            fontSize: 30,
+            color: Colors.blue,
+            fontWeight: FontWeight.bold,
+          ),
+        )
+      ];
+    }
+    return [const SizedBox()];
+  }
+
   Widget createBalanceInput() {
     return Expanded(
       child: Column(
@@ -126,7 +175,15 @@ class _TopUpDialogState extends State<TopUpDialog>
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
-              Text(tr('amount'), style: TextStyle(fontSize: 30)),
+              Row(
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(tr('amount'), style: TextStyle(fontSize: 30)),
+                  ),
+                  ..._displayBonus(),
+                ],
+              ),
               Stack(
                 children: <Widget>[
                   TextFormField(
@@ -266,8 +323,9 @@ class _TopUpDialogState extends State<TopUpDialog>
 
   topUp(BuildContext context) async {
     try {
-      await app.db
-          .topUp(widget.cardId, int.tryParse(_propertyFieldController.text));
+      await app.db.topUp(
+          widget.cardId, int.tryParse(_propertyFieldController.text),
+          bonus: bonus);
       resetFields();
       if (widget.onSuccess != null) widget.onSuccess();
     } catch (e) {

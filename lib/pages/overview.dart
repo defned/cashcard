@@ -204,7 +204,6 @@ class _OverviewPageState extends State<OverviewPage>
   double radius() => 10;
   final FocusNode cardIdFocus = FocusNode();
   final FocusNode propertyFocus = FocusNode();
-  final FocusNode _pageFocus = FocusNode();
 
   void refresh(Function f) {
     Future.delayed(Duration(milliseconds: 100), () {
@@ -223,11 +222,21 @@ class _OverviewPageState extends State<OverviewPage>
       appBar: AppBar(
         title: Row(
           children: <Widget>[
+            // NOTE: Only for test purposes
+            // IconButton(
+            //   iconSize: 35,
+            //   onPressed: () {
+            //     _cardIdFieldController.text = "9920237";
+            //     loadDetails(_cardIdFieldController.text);
+            //   },
+            //   icon: Icon(Icons.credit_card),
+            // ),
             Text(
               tr('title'),
               style: TextStyle(fontSize: 20),
             ),
-            if (isTopUpButtonActive) Expanded(child: createInfoFields()),
+            if (isTopUpButtonActive)
+              Expanded(child: createInfoFields()),
             if (isTopUpButtonActive)
               createButton(
                 tr('topUp'),
@@ -389,15 +398,6 @@ class _OverviewPageState extends State<OverviewPage>
             controller: _cardIdFieldController,
           ),
         ),
-        // NOTE: Only for test purposes
-        // IconButton(
-        //   iconSize: 35,
-        //   onPressed: () {
-        //     _cardIdFieldController.text = "12312312";
-        //     loadDetails(_cardIdFieldController.text);
-        //   },
-        //   icon: Icon(Icons.credit_card),
-        // ),
         const SizedBox(width: 10),
         AutoSizeText(tr('balance'),
             minFontSize: 15, style: TextStyle(fontSize: 25)),

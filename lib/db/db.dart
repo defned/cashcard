@@ -280,23 +280,32 @@ class Db {
               item.product.priceHuf
             ]);
           }
-          // print(c);
           return c;
         }).toList(),
       ];
-      print(params);
-      var result = await _connection.queryMulti(
-          "INSERT INTO SALES (transaction_id, balance_id, product_id, product_name, product_price_huf) VALUES (?, ?, ?, ?, ?)",
-          params);
-      log("Inserted rows (${result.length} record) id=$balanceId amount=$amount");
+      await _connection.transaction((conn) async {
+        var results = await _connection.queryMulti(
+            "INSERT INTO SALES (transaction_id, balance_id, product_id, product_name, product_price_huf) VALUES (?, ?, ?, ?, ?)",
+            params);
+        log("Inserted rows (${results.length} record) id=$balanceId $params");
+        var result = await _connection.query(
+            'INSERT INTO balance_log (id, amount) VALUES (?, ?)',
+            [balanceId, -amount]);
+        log("Inserted rows (${result.affectedRows} record) id=$balanceId amount=${-amount}");
+      });
     } finally {
       await disconnect();
     }
   }
 
-  Future topUp(String id, int amount) {
+  Future topUp(String id, int amount, {int bonus}) async {
     if (!(amount != null && amount > 0)) throw DbExceptions.missingValueInput;
-    return changeBalance(id, amount);
+    if (bonus == null)
+      return changeBalance(id, amount);
+    else if (bonus > 0) {
+      await changeBalance(id, amount);
+      await changeBalance(id, bonus, isBonus: true);
+    }
   }
 
   Future insertBalances(List<DbRecordBalance> records,
@@ -322,7 +331,7 @@ class Db {
     }
   }
 
-  Future changeBalance(String id, int amount) async {
+  Future changeBalance(String id, int amount, {bool isBonus = false}) async {
     if (!(id != null && id.isNotEmpty && amount != null))
       throw DbExceptions.missingKeyInput;
 
@@ -345,10 +354,16 @@ class Db {
         if ((origBalance <= 0 && amount < 0) || origBalance + amount < 0) {
           throw DbExceptions.negativeBalance;
         } else {
-          var result = await _connection.query(
-              'update balance set balance = balance + ? where id = ? and del_sp = "0000-00-00"',
-              [amount, id]);
-          log("Inserted rows (${result.affectedRows} record) id=$id amount=$amount");
+          await _connection.transaction((conn) async {
+            var result = await _connection.query(
+                'UPDATE balance SET balance = balance + ? where id = ? and del_sp = "0000-00-00"',
+                [amount, id]);
+            log("Updated rows (${result.affectedRows} record) id=$id amount=$amount");
+            result = await _connection.query(
+                'INSERT INTO balance_log (id, bonus, amount) VALUES (?, ?, ?)',
+                [id, isBonus ? 1 : 0, amount]);
+            log("Inserted rows (${result.affectedRows} record) id=$id amount=$amount");
+          });
         }
       }
     } finally {
@@ -386,6 +401,50 @@ class Db {
           FROM sales
           WHERE YEAR(eff_sp) = ? AND MONTH(eff_sp) = ?
           GROUP BY product_id
+          ORDER BY total_revenue DESC
+        ''';
+
+      return await _connection
+          .query(query, [selectedDate.year, selectedDate.month]);
+    } catch (e) {
+      log('Jelentés betöltési hiba: $e');
+    } finally {
+      await disconnect();
+    }
+
+    return null;
+  }
+
+  Future<Results> loadBonusReportDaily(DateTime selectedDate) async {
+    try {
+      await connect();
+      String query = '''
+          SELECT id, COUNT(id) as total_quantity, SUM(amount) as total_revenue
+          FROM balance_log
+          WHERE DATE(eff_sp) = ? AND bonus = 1
+          GROUP BY id
+          ORDER BY total_revenue DESC
+        ''';
+
+      return await _connection
+          .query(query, [DateFormat('yyyy-MM-dd').format(selectedDate)]);
+    } catch (e) {
+      log('Jelentés betöltési hiba: $e');
+    } finally {
+      await disconnect();
+    }
+
+    return null;
+  }
+
+  Future<Results> loadBonusReportMonthly(DateTime selectedDate) async {
+    try {
+      await connect();
+      String query = '''
+          SELECT id, COUNT(id) as total_quantity, SUM(amount) as total_revenue
+          FROM balance_log
+          WHERE YEAR(eff_sp) = ? AND MONTH(eff_sp) = ? AND bonus = 1
+          GROUP BY id
           ORDER BY total_revenue DESC
         ''';
 

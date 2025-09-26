@@ -45,6 +45,14 @@ class AppConfig {
             "codeTable": "ISO8859-2",
             "logOnly": false,
           },
+          "loyalty": {
+            "topUpBonusLevels": {
+              "10000": 1000,
+              "20000": 2000,
+              "30000": 3000,
+              "40000": 4000,
+            }
+          },
           "logging": {"filePath": "", "level": "info", "sizeLimit": 25},
           "language": "hu",
           "transformation": {"from": "^\\d{4}(.*)", "to": "\$1"}
@@ -136,6 +144,12 @@ class AppConfig {
   static get printerLogOnly => _config["printer"]["logOnly"];
   static set printerLogOnly(bool logOnly) =>
       _config["printer"]["logOnly"] = logOnly;
+
+  static get loyaltyTopUpBonusLevels => (_config["loyalty"] != null
+      ? _config["loyalty"]["topUpBonusLevels"]
+      : null) as Map<String, dynamic>;
+  static set loyaltyTopUpBonusLevels(Map<String, dynamic> levels) =>
+      _config["loyalty"]["topUpBonusLevels"] = levels;
 
   static get language => _config["language"];
   static set language(String language) => _config["language"] = language;
