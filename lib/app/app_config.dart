@@ -42,6 +42,8 @@ class AppConfig {
           },
           "printer": {
             "name": "EPSON TM-T20III Receipt",
+            "codeTable": "ISO8859-2",
+            "logOnly": false,
           },
           "logging": {"filePath": "", "level": "info", "sizeLimit": 25},
           "language": "hu",
@@ -126,6 +128,14 @@ class AppConfig {
 
   static get printerName => _config["printer"]["name"];
   static set printerName(String name) => _config["printer"]["name"] = name;
+
+  static get printerCodeTable => _config["printer"]["codeTable"];
+  static set printerCodeTable(String codeTable) =>
+      _config["printer"]["codeTable"] = codeTable;
+
+  static get printerLogOnly => _config["printer"]["logOnly"];
+  static set printerLogOnly(bool logOnly) =>
+      _config["printer"]["logOnly"] = logOnly;
 
   static get language => _config["language"];
   static set language(String language) => _config["language"] = language;

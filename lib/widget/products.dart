@@ -1,11 +1,12 @@
 import 'dart:collection';
+import 'dart:io';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cashcard/app/app.dart';
 import 'package:cashcard/app/style.dart';
 import 'package:cashcard/db/db.dart';
 import 'package:cashcard/util/extensions.dart';
-// import 'package:cashcard/db/db.dart';
+import 'package:cashcard/util/logging.dart';
 import 'package:flutter/material.dart';
 
 class Products extends StatefulWidget {
@@ -262,8 +263,22 @@ class _ProductsState extends State<Products>
     );
   }
 
+  void _openWindowsKeyboardViaOSK() {
+    if (Platform.isWindows) {
+      Process.start('osk.exe', [],
+          mode: ProcessStartMode.detached, runInShell: true);
+    } else {
+      log('This command is for Windows only.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_propertyFieldController.text.isNotEmpty)
+      selectedProducts = grouppedProducts[null];
+    else
+      selectedProducts = grouppedProducts[searchCategory];
+
     return Column(
       mainAxisSize: MainAxisSize.max,
       children: <Widget>[
@@ -281,7 +296,17 @@ class _ProductsState extends State<Products>
                 }),
             const SizedBox(width: 15),
             Expanded(child: createBalanceInput()),
-            const SizedBox(width: 50),
+            const SizedBox(width: 10),
+            ActionChip(
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(width: 3, color: AppColors.brightText),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                label: Icon(Icons.keyboard, size: 32),
+                backgroundColor: Colors.green.withAlpha(100),
+                onPressed: () {
+                  _openWindowsKeyboardViaOSK();
+                }),
           ],
         ),
         const SizedBox(height: 10),

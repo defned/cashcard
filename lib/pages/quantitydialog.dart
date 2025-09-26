@@ -31,6 +31,9 @@ class _QuantityDialogState extends State<QuantityDialog>
   void initState() {
     _propertyFieldController =
         TextEditingController(text: widget.quantity?.toString());
+    _propertyFieldController.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _propertyFieldController.value.text.length);
     super.initState();
   }
 
@@ -237,25 +240,20 @@ class _QuantityDialogState extends State<QuantityDialog>
 
   /// Fired when the virtual keyboard key is pressed.
   _onKeyPress(VirtualKeyboardKey key) {
-    TextEditingController ctrl;
-    ctrl = _propertyFieldController;
-
+    TextEditingController ctrl = _propertyFieldController;
     if (key.keyType == VirtualKeyboardKeyType.String) {
-      ctrl.text = ctrl.text + (shiftEnabled ? key.capsText : key.text);
+      if (ctrl.selection.start != -1) {
+        var before = ctrl.selection.textBefore(ctrl.text);
+        // var inside = ctrl.selection.textInside(ctrl.text);
+        var after = ctrl.selection.textAfter(ctrl.text);
+        ctrl.text = before + key.text + after;
+      } else
+        ctrl.text = ctrl.text + key.text;
     } else if (key.keyType == VirtualKeyboardKeyType.Action) {
       switch (key.action) {
         case VirtualKeyboardKeyAction.Backspace:
           if (ctrl.text.length == 0) return;
           ctrl.text = ctrl.text.substring(0, ctrl.text.length - 1);
-          break;
-        case VirtualKeyboardKeyAction.Return:
-          ctrl.text = ctrl.text + '\n';
-          break;
-        case VirtualKeyboardKeyAction.Space:
-          ctrl.text = ctrl.text + key.text;
-          break;
-        case VirtualKeyboardKeyAction.Shift:
-          shiftEnabled = !shiftEnabled;
           break;
         default:
       }

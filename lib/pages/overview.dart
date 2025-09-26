@@ -250,116 +250,109 @@ class _OverviewPageState extends State<OverviewPage>
           )
         ],
       ),
-      body: RawKeyboardListener(
-        autofocus: true,
-        focusNode: _pageFocus,
-        onKey: (event) {
-          log(event.character);
-        },
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
-                child: FutureBuilder<bool>(
-                  initialData: false,
-                  future: _initStateAsync,
-                  builder: (context, stateInitStateAsync) {
-                    if (stateInitStateAsync.data != true)
-                      return Center(child: CircularProgressIndicator());
-                    return Products(
-                      products: _dbProducts,
-                      categories: _dbCategories,
-                      onNewProduct: _newProduct,
-                      onTap: (DbRecordProduct p) => _addToCart(p),
-                    );
-                  },
-                ),
+      body: Row(
+        children: <Widget>[
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
+              child: FutureBuilder<bool>(
+                initialData: false,
+                future: _initStateAsync,
+                builder: (context, stateInitStateAsync) {
+                  if (stateInitStateAsync.data != true)
+                    return Center(child: CircularProgressIndicator());
+                  return Products(
+                    products: _dbProducts,
+                    categories: _dbCategories,
+                    onNewProduct: _newProduct,
+                    onTap: (DbRecordProduct p) => _addToCart(p),
+                  );
+                },
               ),
             ),
-            Container(
-              constraints: BoxConstraints(maxWidth: 500),
-              child: Column(children: <Widget>[
-                Expanded(
-                  child: Cart(
-                    cartItems: cart,
-                    onTapRemoveFromCart: _removeFromCart,
-                    onTapAddToCart: _addToCartByIndex,
-                    onChangeQuantityOfCartItem: _setQuantityOfCartItemByIndex,
-                    itemsChanged: cartCount,
+          ),
+          Container(
+            constraints: BoxConstraints(maxWidth: 500),
+            child: Column(children: <Widget>[
+              Expanded(
+                child: Cart(
+                  cartItems: cart,
+                  onTapRemoveFromCart: _removeFromCart,
+                  onTapAddToCart: _addToCartByIndex,
+                  onChangeQuantityOfCartItem: _setQuantityOfCartItemByIndex,
+                  itemsChanged: cartCount,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                    color: Colors.grey.shade900,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 15, vertical: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Összesen:',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${totalAmount.toStringAsFixed(0)} Ft',
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      color: Colors.grey.shade900,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 15, vertical: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Összesen:',
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            '${totalAmount.toStringAsFixed(0)} Ft',
-                            style: TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Row(
-                        mainAxisSize: MainAxisSize.max,
-                        children: <Widget>[
-                          createButton(
-                            tr('clear'),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Row(
+                      mainAxisSize: MainAxisSize.max,
+                      children: <Widget>[
+                        createButton(
+                          tr('clear'),
+                          scale: 1.0,
+                          color: Colors.red.shade900,
+                          enabled: isClearButtonActive,
+                          onTap: () {
+                            _clearCart();
+                            resetFields();
+                          },
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: createButton(
+                            tr('pay'),
                             scale: 1.0,
-                            color: Colors.red.shade900,
-                            enabled: isClearButtonActive,
-                            onTap: () {
-                              _clearCart();
-                              resetFields();
-                            },
+                            enabled: isPayButtonActive,
+                            color: Colors.green,
+                            onTap: pay,
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: createButton(
-                              tr('pay'),
-                              scale: 1.0,
-                              enabled: isPayButtonActive,
-                              color: Colors.green,
-                              onTap: pay,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ]),
-            ),
-          ],
-        ),
+              ),
+            ]),
+          ),
+        ],
       ),
     );
   }
@@ -677,6 +670,9 @@ class _OverviewPageState extends State<OverviewPage>
     final profile = await CapabilityProfile.load();
     final generator = Generator(PaperSize.mm80, profile);
 
+    if (AppConfig.printerCodeTable != null)
+      bytes += generator.setGlobalCodeTable(AppConfig.printerCodeTable);
+
     // LOGO
     img.Image originalImage = img.decodeImage(logo);
 
@@ -784,7 +780,10 @@ class _OverviewPageState extends State<OverviewPage>
 
     bytes += generator.cut();
 
-    await sendPrintRequest(bytes, AppConfig.printerName);
+    if (AppConfig.printerLogOnly == null || AppConfig.printerLogOnly == false)
+      await sendPrintRequest(bytes, AppConfig.printerName);
+    else
+      log(String.fromCharCodes(bytes));
   }
 
   printReqReceipt(List<CartItem> cartItems, {String origValueRaw}) async {
@@ -795,6 +794,9 @@ class _OverviewPageState extends State<OverviewPage>
 
     final profile = await CapabilityProfile.load();
     final generator = Generator(PaperSize.mm80, profile);
+
+    if (AppConfig.printerCodeTable != null)
+      bytes += generator.setGlobalCodeTable(AppConfig.printerCodeTable);
 
     // LOGO
     img.Image originalImage = img.decodeImage(logo);
@@ -920,6 +922,9 @@ class _OverviewPageState extends State<OverviewPage>
 
     bytes += generator.cut();
 
-    await sendPrintRequest(bytes, AppConfig.printerName);
+    if (AppConfig.printerLogOnly == null || AppConfig.printerLogOnly == false)
+      await sendPrintRequest(bytes, AppConfig.printerName);
+    else
+      log(String.fromCharCodes(bytes));
   }
 }
