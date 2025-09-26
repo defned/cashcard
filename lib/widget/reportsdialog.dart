@@ -82,7 +82,7 @@ class _ReportsDialogState extends State<ReportsDialog>
     int totalQuantity = 0;
 
     for (var item in bonusReportData) {
-      csv += '"${item['id']}";${item['quantity']};${item['revenue']}\n';
+      csv += '"${item['name']}";${item['quantity']};${item['revenue']}\n';
       totalRevenue += item['revenue'];
       totalQuantity += item['quantity'];
     }
