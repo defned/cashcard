@@ -86,7 +86,7 @@
     "authorEmail": "belakovics.akos@gmail.com",
     "about": "A CashCard alkalmazást szerettel és teljes odaadással fordították és készítették.",
     "version": "Verzió",
-    "versionNumber": "0.0.9",
+    "versionNumber": "0.0.10",
     " - Validation messages - ": "-----------------------------",
     "mustBePositive": "Összegnek pozitívnak kell lennie",
     "quantityMustBePositive": "Mennyiségnek pozitívnak kell lennie",

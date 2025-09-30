@@ -15,7 +15,8 @@ import 'package:mysql1/mysql1.dart' as MySQL;
 import 'package:path/path.dart';
 
 class ReportsDialog extends StatefulWidget {
-  const ReportsDialog();
+  final Function onProductsChanged;
+  const ReportsDialog({Key key, this.onProductsChanged}) : super(key: key);
 
   @override
   _ReportsDialogState createState() => _ReportsDialogState();
@@ -28,21 +29,25 @@ class _ReportsDialogState extends State<ReportsDialog>
   String reportType = 'daily';
   List<Map<String, dynamic>> reportData = [];
   List<Map<String, dynamic>> bonusReportData = [];
+  List<DbRecordProduct> productList = [];
 
   void initStateAsync() async {
     await _loadReport();
     await _loadBonusReport();
+    await _loadProductsForFavourites();
   }
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
+    _searchFieldController.addListener(keyTap);
     initStateAsync();
   }
 
   @override
   void dispose() {
+    _searchFieldController.removeListener(keyTap);
     _tabController.dispose();
     super.dispose();
   }
@@ -145,6 +150,14 @@ class _ReportsDialogState extends State<ReportsDialog>
                     ),
                   ),
                   Tab(
+                    icon: Icon(Icons.favorite_border,
+                        color: AppColors.disabledColor),
+                    child: Text(
+                      'Kedvencek',
+                      style: TextStyle(color: AppColors.disabledColor),
+                    ),
+                  ),
+                  Tab(
                     icon: Icon(Icons.file_download,
                         color: AppColors.disabledColor),
                     child: Text(
@@ -171,6 +184,7 @@ class _ReportsDialogState extends State<ReportsDialog>
                   children: [
                     _buildReportTab(),
                     _buildBonusReportTab(),
+                    _buildProductsForFavouriteTab(),
                     _buildAccountBalancesExportTab(),
                     _buildAccountBalancesImportTab(),
                   ],
@@ -389,12 +403,6 @@ class _ReportsDialogState extends State<ReportsDialog>
               ),
               onPressed: _exportBonusReport,
             ),
-            MaterialButton(
-              child: Text(tr('close')),
-              onPressed: () {
-                Navigator.maybePop(this.context);
-              },
-            )
           ],
         )
       ],
@@ -561,12 +569,6 @@ class _ReportsDialogState extends State<ReportsDialog>
               ),
               onPressed: _exportReport,
             ),
-            MaterialButton(
-              child: Text(tr('close')),
-              onPressed: () {
-                Navigator.maybePop(this.context);
-              },
-            )
           ],
         )
       ],
@@ -672,73 +674,186 @@ class _ReportsDialogState extends State<ReportsDialog>
     return res;
   }
 
-  // Widget _buildProductsTab() {
-  //   return Column(
-  //     children: [
-  //       SizedBox(height: 10),
-  //       Row(
-  //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //         children: [
-  //           Text(
-  //             'Összes termék: ${productList.length} db',
-  //             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-  //           ),
-  //           ElevatedButton.icon(
-  //             icon: Icon(Icons.download),
-  //             label: Text('Termékek exportálása'),
-  //             onPressed: _exportProducts,
-  //             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-  //           ),
-  //         ],
-  //       ),
-  //       SizedBox(height: 10),
-  //       Expanded(
-  //         child: SingleChildScrollView(
-  //           scrollDirection: Axis.vertical,
-  //           child: SingleChildScrollView(
-  //             scrollDirection: Axis.horizontal,
-  //             child: DataTable(
-  //               columns: [
-  //                 DataColumn(label: Text('Vonalkód')),
-  //                 DataColumn(label: Text('Név')),
-  //                 DataColumn(label: Text('Ár'), numeric: true),
-  //                 DataColumn(label: Text('Csoport')),
-  //                 DataColumn(label: Text('Kedvenc')),
-  //                 DataColumn(label: Text('Készlet'), numeric: true),
-  //               ],
-  //               rows: productList
-  //                   .map(
-  //                     (item) => DataRow(
-  //                       cells: [
-  //                         DataCell(Text(item['barcode'])),
-  //                         DataCell(Text(item['name'])),
-  //                         DataCell(
-  //                           Text('${item['price'].toStringAsFixed(0)} Ft'),
-  //                         ),
-  //                         DataCell(Text(item['group'])),
-  //                         DataCell(
-  //                           Icon(
-  //                             item['is_favorite']
-  //                                 ? Icons.star
-  //                                 : Icons.star_border,
-  //                             color: item['is_favorite']
-  //                                 ? Colors.amber
-  //                                 : Colors.grey,
-  //                             size: 20,
-  //                           ),
-  //                         ),
-  //                         DataCell(Text(item['stock'].toString())),
-  //                       ],
-  //                     ),
-  //                   )
-  //                   .toList(),
-  //             ),
-  //           ),
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
+  Future _loadProductsForFavourites() async {
+    List<DbRecordProduct> results = await app.db.getProductAll("");
+
+    if (results != null) {
+      setState(() {
+        productList = results;
+        onSortColumn(sortedColumnIndex, sortAscending);
+      });
+    }
+  }
+
+  void keyTap() {
+    setState(() {});
+  }
+
+  onSortColumn(int columnIndex, bool ascending) {
+    setState(() {
+      sortedColumnIndex = columnIndex;
+      sortAscending = ascending;
+
+      if (columnIndex == 0) {
+        if (ascending) {
+          productList.sort((a, b) => a.name.compareTo(b.name));
+        } else {
+          productList.sort((a, b) => b.name.compareTo(a.name));
+        }
+      } else if (columnIndex == 1) {
+        if (ascending) {
+          productList.sort((a, b) => a.priceHuf.compareTo(b.priceHuf));
+        } else {
+          productList.sort((a, b) => b.priceHuf.compareTo(a.priceHuf));
+        }
+      } else if (columnIndex == 2) {
+        if (ascending) {
+          productList.sort((a, b) => a.categoryName.compareTo(b.categoryName));
+        } else {
+          productList.sort((a, b) => b.categoryName.compareTo(a.categoryName));
+        }
+      } else if (columnIndex == 3) {
+        if (ascending) {
+          productList.sort(
+              (a, b) => (a.favourite ? 1 : 0).compareTo((b.favourite ? 1 : 0)));
+        } else {
+          productList.sort(
+              (a, b) => (b.favourite ? 1 : 0).compareTo((a.favourite ? 1 : 0)));
+        }
+      }
+    });
+  }
+
+  bool isLoading = false;
+  int sortedColumnIndex = 0;
+  bool sortAscending = true;
+  TextEditingController _searchFieldController = TextEditingController();
+  Widget _buildProductsForFavouriteTab() {
+    return Column(
+      children: [
+        SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            SizedBox(
+              width: 450,
+              child: TextFormField(
+                controller: _searchFieldController,
+                autocorrect: false,
+                autovalidate: true,
+                enableSuggestions: false,
+                decoration: InputDecoration(
+                  hintText: tr("search"),
+                  prefixIcon: Icon(Icons.search, size: 36),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            Text(
+              'Összes termék: ${productList.length} db',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        SizedBox(height: 10),
+        Expanded(
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              AbsorbPointer(
+                absorbing: isLoading,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: DataTable(
+                    sortAscending: sortAscending,
+                    sortColumnIndex: sortedColumnIndex,
+                    columns: [
+                      DataColumn(
+                          label: Text('Név'),
+                          onSort: (columnIndex, ascending) =>
+                              onSortColumn(columnIndex, ascending)),
+                      DataColumn(
+                          label: Text('Ár'),
+                          numeric: true,
+                          onSort: (columnIndex, ascending) =>
+                              onSortColumn(columnIndex, ascending)),
+                      DataColumn(
+                          label: Text('Csoport'),
+                          onSort: (columnIndex, ascending) =>
+                              onSortColumn(columnIndex, ascending)),
+                      DataColumn(
+                          label: Text('Kedvenc'),
+                          onSort: (columnIndex, ascending) =>
+                              onSortColumn(columnIndex, ascending)),
+                    ],
+                    rows: productList
+                        .where((p) {
+                          bool res = true;
+                          if (_searchFieldController.text != "" &&
+                              !(p.name.toLowerCase().contains(
+                                      _searchFieldController.text
+                                          .toLowerCase()) ||
+                                  (p.code != null &&
+                                      p.code.toLowerCase().contains(
+                                          _searchFieldController.text
+                                              .toLowerCase())))) res = false;
+                          return res;
+                        })
+                        .map(
+                          (item) => DataRow(
+                            cells: [
+                              DataCell(Text(item.name)),
+                              DataCell(
+                                Text('${item.priceHuf} Ft'),
+                              ),
+                              DataCell(Text(item.categoryName)),
+                              DataCell(
+                                IconButton(
+                                  icon: Icon(
+                                    item.favourite
+                                        ? Icons.star
+                                        : Icons.star_border,
+                                    color: item.favourite
+                                        ? Colors.amber
+                                        : Colors.grey,
+                                    size: 20,
+                                  ),
+                                  onPressed: () async {
+                                    setState(() {
+                                      isLoading = true;
+                                    });
+
+                                    await app.db.changeProductFavourite(
+                                        item.id, !item.favourite);
+                                    await _loadProductsForFavourites();
+                                    if (widget.onProductsChanged != null)
+                                      widget.onProductsChanged();
+
+                                    await Future.delayed(
+                                        Duration(milliseconds: 250));
+                                    setState(() {
+                                      isLoading = false;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ),
+              if (isLoading) ...[
+                Container(color: Colors.grey.shade200.withAlpha(220)),
+                Center(child: CircularProgressIndicator()),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
   // Widget _buildCustomersTab() {
   //   double totalBalance = customerList.fold(

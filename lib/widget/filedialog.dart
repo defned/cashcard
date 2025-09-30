@@ -167,12 +167,6 @@ class _FileDialogState extends State<FileDialog>
                   : widget.actionButtonChild,
               onPressed: _onPressed,
             ),
-            MaterialButton(
-              child: Text(tr('close')),
-              onPressed: () {
-                Navigator.maybePop(context);
-              },
-            )
           ],
         ),
       ],

@@ -70,6 +70,23 @@ class _CartState extends State<Cart> {
                       Text(item.product.name, style: TextStyle(fontSize: 22)),
                   subtitle: Text("${item.product.priceHuf} Ft",
                       style: TextStyle(fontSize: 26)),
+                  leading:
+                      // Container(color: Colors.yellow, width: 40, height: 40),
+                      SizedBox(
+                    width: 50,
+                    child: MaterialButton(
+                      color: Colors.red.shade900.withAlpha(100),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 13, horizontal: 0),
+                      shape: RoundedRectangleBorder(
+                          side:
+                              BorderSide(width: 3, color: AppColors.brightText),
+                          borderRadius: BorderRadius.all(Radius.circular(10))),
+                      child: Icon(Icons.remove_shopping_cart, size: 26),
+                      onPressed: () =>
+                          widget.onChangeQuantityOfCartItem(index, 0),
+                    ),
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -85,7 +102,7 @@ class _CartState extends State<Cart> {
                           onPressed: () => widget.onTapRemoveFromCart(index),
                         ),
                       ),
-                      const SizedBox(width: 20),
+                      const SizedBox(width: 10),
                       MaterialButton(
                         padding: const EdgeInsets.symmetric(
                             vertical: 13, horizontal: 8),
@@ -99,7 +116,7 @@ class _CartState extends State<Cart> {
                         onPressed: () =>
                             _showQuantityDialog(index, item.quantity),
                       ),
-                      const SizedBox(width: 20),
+                      const SizedBox(width: 10),
                       Container(
                         decoration: BoxDecoration(
                             border: Border.all(

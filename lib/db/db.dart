@@ -216,6 +216,25 @@ class Db {
     }
   }
 
+  Future changeProductFavourite(int id, bool favourite) async {
+    try {
+      await connect();
+      // Query the database using a parameterized query
+      var results = await _connection.query(
+          'select id from product where id = ? and del_sp = "0000-00-00"',
+          [id]);
+
+      if (results.length == 0) throw DbExceptions.noRows;
+      // Insert some data
+      var result = await _connection.query(
+          'UPDATE product SET favourite = ? WHERE id = ?',
+          [favourite ? 1 : 0, id]);
+      log("Updated row (${result.affectedRows} record) ${[id]}");
+    } finally {
+      await disconnect();
+    }
+  }
+
   Future<DbRecordBalance> getBalance(String id) async {
     try {
       await connect();

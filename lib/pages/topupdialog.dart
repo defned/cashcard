@@ -138,6 +138,7 @@ class _TopUpDialogState extends State<TopUpDialog>
 
   int bonus = 0;
   List<Widget> _displayBonus() {
+    bonus = 0;
     if (loyaltyLevels.length > 0) {
       int topUpValue = int.tryParse(_propertyFieldController.text);
       if (topUpValue != null) {
@@ -186,38 +187,56 @@ class _TopUpDialogState extends State<TopUpDialog>
               ),
               Stack(
                 children: <Widget>[
-                  TextFormField(
-                    readOnly: false,
-                    focusNode: propertyFocus,
-                    autocorrect: false,
-                    autovalidate: true,
-                    enableSuggestions: false,
-                    controller: _propertyFieldController,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 50,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade900,
-                    ),
-                    key: _propertyFieldKey,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Adjon meg egy érvényes összeget";
-                      }
-                      if (value.isNotEmpty) {
-                        int amount = 0;
-                        try {
-                          amount = int.parse(value);
-                        } catch (e) {
-                          return tr("notNumber");
+                  Theme(
+                    data: Theme.of(context)
+                        .copyWith(textSelectionColor: Colors.transparent),
+                    child: TextFormField(
+                      readOnly: true,
+                      focusNode: propertyFocus,
+                      autocorrect: false,
+                      autovalidate: true,
+                      enableSuggestions: false,
+                      controller: _propertyFieldController,
+                      cursorColor: Colors.transparent,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        disabledBorder: InputBorder.none,
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(
+                            color: AppColors.disabledColor,
+                          ),
+                        ),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(
+                            color: AppColors.disabledColor,
+                          ),
+                        ),
+                      ),
+                      style: TextStyle(
+                        fontSize: 50,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade900,
+                      ),
+                      key: _propertyFieldKey,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Adjon meg egy érvényes összeget";
                         }
+                        if (value.isNotEmpty) {
+                          int amount = 0;
+                          try {
+                            amount = int.parse(value);
+                          } catch (e) {
+                            return tr("notNumber");
+                          }
 
-                        if (amount <= 0) {
-                          return tr("mustBePositive");
+                          if (amount <= 0) {
+                            return tr("mustBePositive");
+                          }
                         }
-                      }
-                      return null;
-                    },
+                        return null;
+                      },
+                    ),
                   ),
                   if (_propertyFieldController.text.isNotEmpty)
                     Positioned(

@@ -223,14 +223,14 @@ class _OverviewPageState extends State<OverviewPage>
         title: Row(
           children: <Widget>[
             // NOTE: Only for test purposes
-            // IconButton(
-            //   iconSize: 35,
-            //   onPressed: () {
-            //     _cardIdFieldController.text = "9920237";
-            //     loadDetails(_cardIdFieldController.text);
-            //   },
-            //   icon: Icon(Icons.credit_card),
-            // ),
+            IconButton(
+              iconSize: 35,
+              onPressed: () {
+                _cardIdFieldController.text = "9920237";
+                loadDetails(_cardIdFieldController.text);
+              },
+              icon: Icon(Icons.credit_card),
+            ),
             Text(
               tr('title'),
               style: TextStyle(fontSize: 20),
@@ -261,27 +261,26 @@ class _OverviewPageState extends State<OverviewPage>
       ),
       body: Row(
         children: <Widget>[
+          const SizedBox(width: 15),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
-              child: FutureBuilder<bool>(
-                initialData: false,
-                future: _initStateAsync,
-                builder: (context, stateInitStateAsync) {
-                  if (stateInitStateAsync.data != true)
-                    return Center(child: CircularProgressIndicator());
-                  return Products(
-                    products: _dbProducts,
-                    categories: _dbCategories,
-                    onNewProduct: _newProduct,
-                    onTap: (DbRecordProduct p) => _addToCart(p),
-                  );
-                },
-              ),
+            child: FutureBuilder<bool>(
+              initialData: false,
+              future: _initStateAsync,
+              builder: (context, stateInitStateAsync) {
+                if (stateInitStateAsync.data != true)
+                  return Center(child: CircularProgressIndicator());
+                return Products(
+                  products: _dbProducts,
+                  categories: _dbCategories,
+                  onNewProduct: _newProduct,
+                  onTap: (DbRecordProduct p) => _addToCart(p),
+                );
+              },
             ),
           ),
+          const SizedBox(width: 5),
           Container(
-            constraints: BoxConstraints(maxWidth: 500),
+            constraints: BoxConstraints(maxWidth: 550),
             child: Column(children: <Widget>[
               Expanded(
                 child: Cart(
@@ -463,7 +462,11 @@ class _OverviewPageState extends State<OverviewPage>
 
   void _setQuantityOfCartItemByIndex(int index, int quantity) {
     setState(() {
-      cart[index].quantity = quantity;
+      if (quantity > 0) {
+        cart[index].quantity = quantity;
+      } else {
+        cart.removeAt(index);
+      }
     });
     updateButtonState();
   }
@@ -557,13 +560,22 @@ class _OverviewPageState extends State<OverviewPage>
     );
   }
 
-  void showReportsDialog() {
-    showDialog<void>(
+  void showReportsDialog() async {
+    bool isProductsChanged = false;
+    await showDialog<void>(
         barrierDismissible: true,
         context: this.context,
         builder: (context) {
-          return ReportsDialog();
+          return ReportsDialog(onProductsChanged: () {
+            isProductsChanged = true;
+          });
         });
+    // Delayed products refresh
+    if (isProductsChanged) {
+      _newProduct();
+      await _initStateAsync;
+      setState(() {});
+    }
   }
 
   void showAbout() {

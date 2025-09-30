@@ -1,12 +1,11 @@
 import 'dart:collection';
-import 'dart:io';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cashcard/app/app.dart';
 import 'package:cashcard/app/style.dart';
 import 'package:cashcard/db/db.dart';
 import 'package:cashcard/util/extensions.dart';
-import 'package:cashcard/util/logging.dart';
+import 'package:cashcard/widget/virtualkeyboardwidget.dart';
 import 'package:flutter/material.dart';
 
 class Products extends StatefulWidget {
@@ -58,7 +57,16 @@ class _ProductsState extends State<Products>
     _tabController =
         TabController(length: grouppedProducts.keys.length, vsync: this);
     prepareVars();
+    _propertyFocus.addListener(updateTextFieldFocus);
     selectedProducts = grouppedProducts[null];
+  }
+
+  @override
+  void dispose() {
+    _propertyFieldController.removeListener(_setState);
+    _propertyFocus.removeListener(updateTextFieldFocus);
+    _tabController.dispose();
+    super.dispose();
   }
 
   void prepareVars() {
@@ -103,13 +111,6 @@ class _ProductsState extends State<Products>
       }
       // selectedGroupId = widget.categories.first.id;
     }
-  }
-
-  @override
-  void dispose() {
-    _propertyFieldController.removeListener(_setState);
-    _tabController.dispose();
-    super.dispose();
   }
 
   final _formKey = GlobalKey<FormState>();
@@ -263,13 +264,24 @@ class _ProductsState extends State<Products>
     );
   }
 
-  void _openWindowsKeyboardViaOSK() {
-    if (Platform.isWindows) {
-      Process.start('osk.exe', [],
-          mode: ProcessStartMode.detached, runInShell: true);
-    } else {
-      log('This command is for Windows only.');
-    }
+  bool keyboardIsActive = false;
+  void _openVirtualKeyboard() {
+    if (!keyboardIsActive)
+      _propertyFocus.requestFocus();
+    else
+      _propertyFocus.unfocus();
+    // setState(() {
+    //   keyboardIsActive = !keyboardIsActive;
+    //   if (!keyboardIsActive) {
+    //     _propertyFocus.unfocus();
+    //   }
+    // });
+  }
+
+  void updateTextFieldFocus() {
+    setState(() {
+      keyboardIsActive = _propertyFocus.hasFocus;
+    });
   }
 
   @override
@@ -285,28 +297,38 @@ class _ProductsState extends State<Products>
         Row(
           children: <Widget>[
             ActionChip(
-                shape: RoundedRectangleBorder(
-                  side: BorderSide(width: 3, color: AppColors.brightText),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                label: Text("+", style: TextStyle(fontSize: 32)),
-                backgroundColor: Colors.green.withAlpha(100),
-                onPressed: () {
-                  _showNewProductDialog("");
-                }),
+              shape: RoundedRectangleBorder(
+                side: BorderSide(width: 3, color: AppColors.brightText),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              label: Text("+", style: TextStyle(fontSize: 32)),
+              backgroundColor: Colors.green.withAlpha(100),
+              onPressed: () {
+                _showNewProductDialog("");
+              },
+            ),
             const SizedBox(width: 15),
-            Expanded(child: createBalanceInput()),
+            Expanded(child: createSearchInput()),
             const SizedBox(width: 10),
             ActionChip(
-                shape: RoundedRectangleBorder(
-                  side: BorderSide(width: 3, color: AppColors.brightText),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                label: Icon(Icons.keyboard, size: 32),
-                backgroundColor: Colors.green.withAlpha(100),
-                onPressed: () {
-                  _openWindowsKeyboardViaOSK();
-                }),
+              shape: RoundedRectangleBorder(
+                side: BorderSide(
+                    width: 3,
+                    color: keyboardIsActive
+                        ? AppColors.brightText
+                        : AppColors.disabledColor),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              label: Icon(Icons.keyboard,
+                  size: 32,
+                  color: keyboardIsActive
+                      ? AppColors.brightText
+                      : Colors.grey.shade500),
+              backgroundColor: Colors.green.withAlpha(100),
+              onPressed: () {
+                _openVirtualKeyboard();
+              },
+            ),
           ],
         ),
         const SizedBox(height: 10),
@@ -381,27 +403,67 @@ class _ProductsState extends State<Products>
               }).toList(),
             ),
           ),
+        ),
+        AnimatedContainer(
+          duration: const Duration(microseconds: 500),
+          height: keyboardIsActive ? null : 0,
+          child: Column(
+            children: <Widget>[
+              SizedBox(height: 10),
+              HunVirtualKeyboard(onKeyTap: _onVirtualKeyBoardKeyTap),
+              SizedBox(height: 10),
+            ],
+          ),
         )
       ],
     );
   }
 
+  void _onVirtualKeyBoardKeyTap(String key) {
+    setState(() {
+      var ctrl = _propertyFieldController;
+
+      if (key == HunVirtualKeyboard.spaceKeyChar) {
+        key = " ";
+      }
+
+      if (key != HunVirtualKeyboard.shiftKeyChar &&
+          key != HunVirtualKeyboard.backspaceKeyChar) {
+        if (ctrl.selection.start != -1) {
+          var before = ctrl.selection.textBefore(ctrl.text);
+          var after = ctrl.selection.textAfter(ctrl.text);
+          ctrl.text = before + key + after;
+        } else
+          ctrl.text = ctrl.text + key;
+      } else if (key == HunVirtualKeyboard.backspaceKeyChar) {
+        if (ctrl.text.length == 0) return;
+
+        if (ctrl.selection.end - ctrl.selection.start > 0) {
+          var before = ctrl.selection.textBefore(ctrl.text);
+          var after = ctrl.selection.textAfter(ctrl.text);
+          ctrl.text = before + after;
+        } else
+          ctrl.text = ctrl.text.substring(0, ctrl.text.length - 1);
+      }
+    });
+  }
+
   TextEditingController _propertyFieldController = TextEditingController();
   final GlobalKey<FormFieldState> _propertyFieldKey =
       GlobalKey<FormFieldState>();
-  final FocusNode propertyFocus = FocusNode();
+  final FocusNode _propertyFocus = FocusNode();
   void refresh(Function f) {
     Future.delayed(Duration(milliseconds: 100), () {
       if (mounted) setState(f);
     });
   }
 
-  Widget createBalanceInput() {
+  Widget createSearchInput() {
     return Stack(
       children: <Widget>[
         TextFormField(
           cursorColor: Colors.transparent,
-          focusNode: propertyFocus,
+          focusNode: _propertyFocus,
           autocorrect: false,
           autovalidate: true,
           enableSuggestions: false,
@@ -411,7 +473,6 @@ class _ProductsState extends State<Products>
             border: OutlineInputBorder(),
           ),
           controller: _propertyFieldController,
-          // textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
@@ -477,11 +538,11 @@ class ProductCard extends StatelessWidget {
                     Center(
                       child: AutoSizeText(
                           refData == null ? data.name : refData.name,
-                          maxLines: 2,
+                          maxLines: 3,
                           wrapWords: true,
                           softWrap: true,
                           textAlign: TextAlign.center,
-                          minFontSize: 20,
+                          minFontSize: 14,
                           style: TextStyle(
                             fontSize: 32,
                             color: Colors.transparent,
@@ -490,11 +551,11 @@ class ProductCard extends StatelessWidget {
                     ),
                     Center(
                       child: AutoSizeText(data.name,
-                          maxLines: 2,
+                          maxLines: 3,
                           wrapWords: true,
                           softWrap: true,
                           textAlign: TextAlign.center,
-                          minFontSize: 20,
+                          minFontSize: 14,
                           style: TextStyle(
                             fontSize: 32,
                             color: AppColors.brightText,

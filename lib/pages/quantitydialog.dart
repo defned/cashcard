@@ -142,6 +142,19 @@ class _QuantityDialogState extends State<QuantityDialog>
                     autovalidate: true,
                     enableSuggestions: false,
                     controller: _propertyFieldController,
+                    decoration: InputDecoration(
+                      disabledBorder: InputBorder.none,
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: AppColors.disabledColor,
+                        ),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: AppColors.disabledColor,
+                        ),
+                      ),
+                    ),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 50,
@@ -244,7 +257,6 @@ class _QuantityDialogState extends State<QuantityDialog>
     if (key.keyType == VirtualKeyboardKeyType.String) {
       if (ctrl.selection.start != -1) {
         var before = ctrl.selection.textBefore(ctrl.text);
-        // var inside = ctrl.selection.textInside(ctrl.text);
         var after = ctrl.selection.textAfter(ctrl.text);
         ctrl.text = before + key.text + after;
       } else
